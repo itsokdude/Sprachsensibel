@@ -8,16 +8,22 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Google Fonts (Optional, für schöneren Look wie im Original) -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
     
     <style>
         body { font-family: 'Inter', sans-serif; }
-        h1, h2, h3, .font-serif { font-family: 'Merriweather', serif; }
-        .font-handwriting { font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; } /* Fallback für Handschrift */
+        h1, h2, h3, h4, .font-serif { font-family: 'Merriweather', serif; }
+        .font-handwriting { font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5c0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a4c3a2; }
     </style>
 
-    <!-- Import Map für saubere Modul-Namen -->
+    <!-- Import Map -->
     <script type="importmap">
     {
         "imports": {
@@ -29,67 +35,98 @@
     }
     </script>
     
-    <!-- Babel für JSX Kompilierung im Browser -->
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body class="bg-[#f4f1ea]">
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import React, { useState, useEffect } from 'react';
+        import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
         import { motion, AnimatePresence } from 'framer-motion';
         import { 
-          BookOpen, 
-          MessageCircle, 
-          Layers, 
-          Brain, 
-          Hammer, 
-          ChevronRight, 
-          ChevronLeft, 
-          CheckSquare, 
-          Maximize2, 
-          X, 
-          Users, 
-          Search, 
-          PenTool, 
-          BarChart, 
-          FileText, 
-          AlertTriangle, 
-          Eye, 
-          EyeOff, 
-          Image as ImageIcon, 
-          Thermometer, 
-          Scale 
+          BookOpen, MessageCircle, Layers, Brain, Hammer, ChevronRight, ChevronLeft, 
+          CheckSquare, Maximize2, X, Search, PenTool, BarChart, FileText, 
+          AlertTriangle, Eye, Image as ImageIcon, PenLine, QrCode, Lightbulb,
+          RefreshCw, ArrowUpRight, File, List, ArrowRight, FolderOpen, Book
         } from 'lucide-react';
 
-        // --- Data & Configuration ---
-
-        const slides = [
-          { id: 'intro', title: 'Start', subtitle: 'Überblick', icon: <BookOpen /> },
-          { id: 'theory', title: 'Theorie', subtitle: 'Grundlagen & Prinzipien', icon: <Brain /> },
-          { id: 'diagnosis', title: 'Diagnose', subtitle: 'Das Problem', icon: <AlertTriangle /> },
-          { id: 'sim_p1', title: 'Phase 1', subtitle: 'Einstieg', icon: <MessageCircle /> },
-          { id: 'sim_p2', title: 'Phase 2', subtitle: 'Erarbeitung', icon: <Search /> },
-          { id: 'sim_p3', title: 'Phase 3', subtitle: 'Produktion', icon: <PenTool /> },
-          { id: 'sim_p4', title: 'Phase 4', subtitle: 'Reflexion', icon: <CheckSquare /> },
-          { id: 'curriculum', title: 'Fazit', subtitle: 'Ausblick', icon: <Layers /> },
-        ];
-
+        // --- ASSETS ---
         const IMAGE_ASSETS = {
           caricature: "https://i.ibb.co/VcDPgHt2/handyverbot-an-schulen-4605895.jpg", 
-          theoryDiagram: "image_d32e30.png", 
-          theoryScaffold: "image_d32ae5.png", 
           material1: "image_d32aaf.png", 
           material2: "image_d32b0a.png", 
           material3: "image_d32a2b.png", 
           scaffoldA: "image_d32a6a.png", 
-          scaffoldB: "image_d32e0c.png", 
+          scaffoldB: "image_d32e0c.png",
+          
+          // Leisen Principles
+          p1_grafik: "https://i.postimg.cc/pTzhCjfL/Bild-2026-01-16-143715963.png", 
+          p1_qr: "https://i.postimg.cc/VLDSKmCv/Bild-2026-01-16-143758499.png", 
+          p1_text_example: "https://i.postimg.cc/6QRpxXyj/Bild-2026-01-16-143916643.png", 
+          p1_schoolbook: "https://i.postimg.cc/0j5tq92f/Bild-2026-01-16-150115290.png",
+
+          // P2 Images 
+          p2_overview: "https://i.postimg.cc/gcfmy042/Bild-2026-01-16-163303978.png", 
+          p2_text_braun: "https://i.postimg.cc/0NGwvm40/Bild-2026-01-16-141756739.png", 
+          p2_abbildung: "https://i.postimg.cc/X7TGyQSF/1d65154e4f1a02416e6476bdd835992c.png", 
+          
+          // P3 Example
+          p3_grafik: "https://i.postimg.cc/RFdRd2QS/Bild-2026-01-16-150236421.png",
+          p3_vorgang: "https://i.postimg.cc/xCVf54Td/Bild-2026-01-16-150904582.png",
+
+          // Important Diagrams
+          p4_schaubild: "https://i.postimg.cc/tTKJV48G/Bild-2026-01-16-142320397.png",
+          strat_lese: "https://i.postimg.cc/W4V702LW/Bild-2026-01-16-143154557.png",
+
+          // Strategy Comics
+          strat_defensive_comic: "https://i.postimg.cc/mrmDLwbR/c25f15ed1951ebb038b809389bbe2efe.jpg",
+          strat_offensive_comic: "https://i.postimg.cc/VNnR2J1B/Bild-2026-01-16-152948417.png",
+
+          theory5_ex1: "https://i.ibb.co/LXwF7P7d/b91999a53e7f89c6ceeb1379668ef9b3.jpg",
+          theory5_ex2: "https://i.ibb.co/xtBqtjZW/image.png"
         };
 
-        const blobShape1 = "60% 40% 30% 70% / 60% 30% 70% 40%";
-        const blobShape2 = "30% 70% 70% 30% / 30% 30% 70% 70%";
-        const blobShape3 = "70% 30% 30% 70% / 60% 40% 60% 40%";
+        // --- SLIDE DEFINITIONS ---
+        const slides = [
+          { id: 'intro', title: 'Start', subtitle: 'Überblick' },
+          { id: 'theory_1', title: 'Theorie', subtitle: 'Warum Sprache?' },
+          { id: 'theory_2', title: 'Theorie', subtitle: 'Zentrale Frage' },
+          { id: 'theory_3', title: 'Theorie', subtitle: 'Sprachvergleich' },
+          { id: 'theory_4', title: 'Theorie', subtitle: 'Probleme & Leiter' },
+          { id: 'theory_5', title: 'Theorie', subtitle: 'Darstellungsformen' },
+          { id: 'theory_6', title: 'Theorie', subtitle: '4 Prinzipien (Übersicht)' },
+          { id: 'theory_7', title: 'Theorie', subtitle: '3 Wege' },
+          { id: 'theory_8', title: 'Theorie', subtitle: 'Vertiefung & Praxis' },
+          { id: 'diagnosis', title: 'Diagnose', subtitle: 'Das Problem' },
+          { id: 'sim_p1', title: 'Praxis: Einstieg', subtitle: 'Simulation' },
+          { id: 'workshop', title: 'Praxis: Workshop', subtitle: 'Material-Check' },
+          { id: 'sim_p2', title: 'Praxis: Erarbeitung', subtitle: 'Simulation' },
+          { id: 'sim_p3', title: 'Praxis: Produktion', subtitle: 'Simulation' },
+          { id: 'sim_p4', title: 'Praxis: Reflexion', subtitle: 'Simulation' },
+          // PRINCIPLE DETAILS
+          { id: 'detail_p1', title: 'Prinzip 1', subtitle: 'Sprachbad' },
+          { id: 'detail_p1_app', title: 'Prinzip 1', subtitle: 'Anwendung' },
+          { id: 'detail_p1_ex', title: 'Prinzip 1', subtitle: 'Beispiel' },
+          // P2
+          { id: 'detail_p2', title: 'Prinzip 2', subtitle: 'Darstellungsformen' }, 
+          { id: 'detail_p2_task', title: 'Prinzip 2', subtitle: 'Beispielaufgabe' }, // Updated
+          { id: 'detail_p2_sol', title: 'Prinzip 2', subtitle: 'Lösungen & Fazit' },
+          // P3 
+          { id: 'detail_p3', title: 'Prinzip 3', subtitle: 'Herausforderung' },
+          { id: 'detail_p3_ex', title: 'Prinzip 3', subtitle: 'Unterrichtsbeispiel' }, 
+          // P4
+          { id: 'detail_p4', title: 'Prinzip 4', subtitle: 'Heterogenisierung' },
+          { id: 'detail_p4_diff', title: 'Prinzip 4', subtitle: 'Selbstdifferenzierung' },
+          // STRATEGIES
+          { id: 'strat_def_off', title: 'Strategien', subtitle: 'Defensiv vs. Offensiv' },
+          { id: 'strat_task', title: 'Strategien', subtitle: 'Arbeitsauftrag' }, 
+          { id: 'strat_categories', title: 'Strategien', subtitle: 'Werkzeug-Kategorien' }, 
+          { id: 'strat_stark', title: 'Strategien', subtitle: 'Stärkender Weg' }, // Updated
+          
+          { id: 'curriculum', title: 'Fazit', subtitle: 'Ausblick' },
+        ];
 
         // --- Helper Components ---
 
@@ -120,665 +157,536 @@
 
         function PresentationApp() {
           const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+          
+          // Interactions
+          const [revealColumns, setRevealColumns] = useState(false);
           const [scaffoldingActive, setScaffoldingActive] = useState(false);
-          const [theoryTab, setTheoryTab] = useState('concepts');
           const [isZoomed, setIsZoomed] = useState(null);
           const [showDidactic, setShowDidactic] = useState(false); 
+          
+          // Toggle States
+          const [showSolutions, setShowSolutions] = useState(false);
+          const [showExampleText, setShowExampleText] = useState(false);
+          // Removed manual toggles for P2 Solutions as requested
+          const [showToolSolutions, setShowToolSolutions] = useState(false); 
+
+          // Nav Lock for debouncing rapid key presses
+          const isNavigatingRef = useRef(false);
 
           const currentSlide = slides[currentPhaseIndex];
 
+          // Reset Logic on Slide Change
+          useEffect(() => {
+             setShowDidactic(false);
+             setScaffoldingActive(false);
+             setRevealColumns(false);
+             setIsZoomed(null);
+             setShowSolutions(false);
+             setShowExampleText(false);
+             setShowToolSolutions(false);
+          }, [currentPhaseIndex]);
+
           const nextSlide = () => {
+            if (isNavigatingRef.current) return;
             if (currentPhaseIndex < slides.length - 1) {
-              setCurrentPhaseIndex(prev => prev + 1);
-              setScaffoldingActive(false); 
-              setTheoryTab('concepts'); 
-              setIsZoomed(null);
-              setShowDidactic(false);
+                isNavigatingRef.current = true;
+                setCurrentPhaseIndex(prev => prev + 1);
+                setTimeout(() => { isNavigatingRef.current = false; }, 400); 
             }
           };
 
           const prevSlide = () => {
+            if (isNavigatingRef.current) return;
             if (currentPhaseIndex > 0) {
-              setCurrentPhaseIndex(prev => prev - 1);
-              setIsZoomed(null);
-              setShowDidactic(false);
+                isNavigatingRef.current = true;
+                setCurrentPhaseIndex(prev => prev - 1);
+                setTimeout(() => { isNavigatingRef.current = false; }, 400);
             }
           };
 
           // Keyboard Navigation
           useEffect(() => {
             const handleKeyDown = (e) => {
-              if (e.key === 'ArrowRight' || e.key === ' ') {
-                nextSlide();
-              } else if (e.key === 'ArrowLeft') {
-                prevSlide();
-              } else if (e.key === 'Escape') {
-                setIsZoomed(null);
-              }
+              if (e.key === 'ArrowRight') nextSlide();
+              if (e.key === 'ArrowLeft') prevSlide();
+              if (e.key === 'Escape') setIsZoomed(null);
             };
-
             window.addEventListener('keydown', handleKeyDown);
             return () => window.removeEventListener('keydown', handleKeyDown);
-          }, [currentPhaseIndex]); 
+          }, [currentPhaseIndex]);
 
-          // --- Render Functions ---
+          // --- DIDACTIC CONTENT PROVIDER ---
+          const getDidacticContent = () => {
+             switch(slides[currentPhaseIndex].id) {
+                case 'diagnosis': return <p>Die Unterscheidung nach Cummins (BICS vs. CALP) ist essenziell.</p>;
+                case 'sim_p1': return <p>Impuls: Visueller Reiz (Karikatur) aktiviert Vorwissen.</p>;
+                case 'sim_p2': return <p>Herausforderung: Diskontinuierlicher Text (Statistik) &rarr; Verbalisierung.</p>;
+                case 'sim_p3': return <p>Offensives Vorgehen: Scaffolding für komplexe Aufgabe.</p>;
+                default: return null;
+             }
+          };
 
-          const renderIntro = () => (
-            <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-[#f4f1ea] text-[#1e3a2f]">
-              <div className="absolute top-[-20%] left-[-10%] w-[70vh] h-[70vh] bg-[#1e3a2f] opacity-10 pointer-events-none" style={{ borderRadius: blobShape1 }}></div>
-              <div className="absolute bottom-[-10%] right-[-15%] w-[80vh] h-[80vh] bg-[#d6e6d0] opacity-60 pointer-events-none" style={{ borderRadius: blobShape2 }}></div>
+          // --- RENDERERS ---
 
-              <motion.div 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1 }}
-                className="relative z-10 text-center max-w-4xl px-8"
-              >
-                <div className="inline-block mb-8 px-8 py-3 bg-[#e8f0e6] rounded-full border border-[#cbd5c0]">
-                   <span className="font-serif italic text-lg text-[#3a5a40]">Seminar: Sprachliche Varianz im Deutschunterricht</span>
-                   <span className="block text-xs font-bold uppercase tracking-wider text-[#609966] mt-1">Dr. Benjamin Könning</span>
+          // Standard Renderers (Intro to Sim P4) omitted for brevity - Assume unchanged from previous version unless specified
+          const renderIntro = () => (<div className="flex flex-col items-center justify-center h-full text-center p-8"><div className="bg-white/60 backdrop-blur-sm p-12 rounded-[3rem] shadow-xl border border-white max-w-4xl"><h1 className="text-6xl font-serif font-black text-[#1e3a2f] mb-8">Sprachsensibler Unterricht</h1><p className="text-2xl text-[#3a5a40] mb-12">Theorie, Prinzipien & Praxis</p><div className="flex justify-center gap-8 text-[#1e3a2f] font-bold"><span>Köksal</span><span>•</span><span>Sagir</span><span>•</span><span>Sprengnöder</span><span>•</span><span>Pacharzyna</span></div></div></div>);
+          const renderTheory1 = () => (<div className="flex flex-col items-center justify-center h-full p-12 max-w-6xl mx-auto"><h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-4">Ich unterrichte doch ein Fach – warum Sprache?</h2><p className="text-xl text-[#4a6b58] mb-12 font-bold">– Kein Fachlernen ohne Sprachlernen –</p><div className="w-full bg-white rounded-xl shadow-lg overflow-hidden border border-[#cbd5c0]"><div className="grid grid-cols-3 bg-[#1e3a2f] text-white p-4 font-bold text-lg"><div>1. Begriff</div><div>2. Alltagssprache</div><div>3. Fachsprache</div></div><div className="relative">{[{ c1: "Lösung", c2: "Antwort", c3: "Chemisches Gemisch" }, { c1: "Spannung", c2: "Konflikt / Spannungsbogen", c3: "Elektrische Spannung" }, { c1: "Modell", c2: "Vorbild", c3: "Vereinfachte Darstellung" }].map((row, i) => (<div key={i} className="grid grid-cols-3 p-6 border-b border-[#e0e0e0] items-center text-lg"><div className="font-bold text-[#1e3a2f]">{row.c1}</div><div className={`transition-all duration-700 ${revealColumns ? 'blur-0 opacity-100' : 'blur-md opacity-30'}`}>{row.c2}</div><div className={`transition-all duration-700 ${revealColumns ? 'blur-0 opacity-100' : 'blur-md opacity-30'} text-[#609966] font-bold`}>{row.c3}</div></div>))}{!revealColumns && (<div className="absolute inset-0 flex items-center justify-center z-10"><button onClick={() => setRevealColumns(true)} className="bg-[#1e3a2f] text-white px-8 py-4 rounded-full font-bold shadow-xl flex items-center gap-2"><Eye size={20} /> Auflösen</button></div>)}</div></div></div>);
+          const renderTheory2 = () => (<div className="grid grid-cols-2 gap-12 h-full p-12 items-center"><div className="bg-[#1e3a2f] p-10 rounded-[2rem] text-white shadow-xl h-full flex flex-col justify-center"><h3 className="text-2xl font-bold text-[#a4c3a2] mb-6">Die zentrale Frage:</h3><blockquote className="text-3xl font-serif leading-relaxed mb-6">„Es gibt kein Fachlernen ohne Sprachlernen.<br/>Wie kann ich meine Schüler beim Verstehen des Faches UND der Sprache unterstützen?“</blockquote><p className="text-right italic">– Prof. Josef Leisen</p></div><div className="space-y-8"><h3 className="text-3xl font-bold text-[#1e3a2f] border-b-4 border-[#609966] inline-block pb-2">Zwei Sprachen im Unterricht</h3><div className="bg-white p-6 rounded-xl shadow border-l-8 border-[#a4c3a2]"><h4 className="font-bold text-xl mb-2">Alltagssprache</h4><ul className="list-disc list-inside space-y-1 text-[#4a6b58]"><li>Spontan & emotional</li><li>Einfache Strukturen</li><li>Konkrete Begriffe</li><li>Kommunikationsmittel</li><li>Oft subjektiv</li></ul></div><div className="bg-white p-6 rounded-xl shadow border-l-8 border-[#1e3a2f]"><h4 className="font-bold text-xl mb-2">Bildungssprache</h4><ul className="list-disc list-inside space-y-1 text-[#4a6b58]"><li>Geplant</li><li>Komplexe Strukturen</li><li>Abstrakte Begriffe</li><li>Denkwerkzeug im Fach</li></ul></div></div></div>);
+          const renderTheory3 = () => (<div className="flex flex-col items-center justify-center h-full p-12 max-w-7xl mx-auto"><h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-8">Sprachvergleich</h2><div className="w-full bg-white rounded-xl shadow-lg overflow-hidden border border-[#cbd5c0]"><div className="grid grid-cols-12 bg-[#1e3a2f] text-white p-4 font-bold text-lg"><div className="col-span-6">Satz</div><div className="col-span-3">Zuordnung</div><div className="col-span-3">Beispiel/Merkmal</div></div><div className="divide-y divide-gray-200"><div className="grid grid-cols-12 p-6 items-center hover:bg-gray-50"><div className="col-span-6 font-handwriting text-xl text-gray-600">„Das Experiment ging schief.“</div><div className="col-span-3 font-bold text-[#a4c3a2]">Alltagssprache</div><div className="col-span-3 text-sm italic text-gray-500">Unpräzise</div></div><div className="grid grid-cols-12 p-6 items-center bg-[#f4f1ea]/50 border-l-4 border-[#1e3a2f]"><div className="col-span-6 text-[#1e3a2f] font-medium">„Das Experiment führte aufgrund eines Messfehlers nicht zum erwarteten Ergebnis.“</div><div className="col-span-3 font-bold text-[#1e3a2f]">Bildungssprache</div><div className="col-span-3 text-sm italic text-[#609966]">Präzise, sachlich</div></div><div className="grid grid-cols-12 p-6 items-center hover:bg-gray-50"><div className="col-span-6 font-handwriting text-xl text-gray-600">„Ich glaube, das ist falsch.“</div><div className="col-span-3 font-bold text-[#a4c3a2]">Alltagssprache</div><div className="col-span-3 text-sm italic text-gray-500">Subjektiv</div></div><div className="grid grid-cols-12 p-6 items-center bg-[#f4f1ea]/50 border-l-4 border-[#1e3a2f]"><div className="col-span-6 text-[#1e3a2f] font-medium">„Diese Annahme lässt sich durch die Daten nicht bestätigen.“</div><div className="col-span-3 font-bold text-[#1e3a2f]">Bildungssprache</div><div className="col-span-3 text-sm italic text-[#609966]">Objektiv, fachlich</div></div></div></div></div>);
+          const renderTheory4 = () => (<div className="flex flex-col h-full p-12 gap-8"><div className="grid grid-cols-3 gap-6"><div className="bg-red-50 p-6 rounded-xl border border-red-100"><h4 className="font-bold text-red-800 mb-2 flex items-center gap-2"><AlertTriangle size={18}/> Abstrakte Fachbegriffe</h4><p className="text-sm text-red-700">„Osmose“, „Katalysator“<br/>→ Keine Alltagserfahrung</p></div><div className="bg-red-50 p-6 rounded-xl border border-red-100"><h4 className="font-bold text-red-800 mb-2 flex items-center gap-2"><AlertTriangle size={18}/> Komplexe Satzstrukturen</h4><p className="text-sm text-red-700">Nominalstil, Konjunktionen</p></div><div className="bg-red-50 p-6 rounded-xl border border-red-100"><h4 className="font-bold text-red-800 mb-2 flex items-center gap-2"><AlertTriangle size={18}/> Fehlende Kohärenz</h4><p className="text-sm text-red-700">Mentale Modellbildung fällt schwer</p></div></div><div className="flex-1 bg-white rounded-[2rem] shadow-lg p-8 flex flex-col items-center justify-center relative overflow-hidden border border-[#e0e0e0]"><h3 className="text-2xl font-bold text-[#1e3a2f] mb-8 absolute top-8 left-8">Sprache im Unterricht</h3><div className="relative w-full max-w-2xl h-64 flex flex-col justify-between items-center"><div className="bg-[#1e3a2f] text-white px-8 py-3 rounded-lg font-bold w-full text-center z-10 shadow-lg">Fachsprache = Sprache des Verstandenen</div><div className="flex-1 w-2/3 flex justify-between relative px-12 py-2"><div className="w-4 h-full bg-[#cbd5c0] rounded-full"></div><div className="w-4 h-full bg-[#cbd5c0] rounded-full"></div><div className="absolute inset-0 flex flex-col justify-evenly items-center"><div className="w-full h-8 bg-[#609966] rounded flex items-center justify-center text-white font-bold shadow-md">Unterrichtssprache als Zwischensprache</div><div className="w-full h-8 bg-[#609966] rounded flex items-center justify-center text-white font-bold shadow-md">(Die Leiter)</div></div></div><div className="bg-[#a4c3a2] text-[#1e3a2f] px-8 py-3 rounded-lg font-bold w-full text-center z-10 shadow-lg">Unterrichtssprache = Sprache des Verstehens</div></div></div></div>);
+          const renderTheory5 = () => (<div className="flex flex-col h-full p-12 items-center justify-center"><h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-12">Wechsel der Darstellungsformen</h2><p className="text-[#4a6b58] mb-8 text-xl">Kern einer Didaktik des sprachsensiblen Unterrichts:</p><div className="grid grid-cols-2 gap-8 w-full max-w-4xl"><div className="bg-white p-8 rounded-2xl shadow-lg border-l-8 border-[#609966] hover:scale-105 transition-transform"><h3 className="text-2xl font-bold text-[#1e3a2f] mb-2">Bildsprache</h3><p className="text-[#4a6b58]">Bilder, Diagramme, Skizzen</p></div><div className="bg-white p-8 rounded-2xl shadow-lg border-l-8 border-[#1e3a2f] hover:scale-105 transition-transform"><h3 className="text-2xl font-bold text-[#1e3a2f] mb-2">Verbalsprache</h3><p className="text-[#4a6b58]">Sachtexte, Erklärungen</p></div><div className="bg-white p-8 rounded-2xl shadow-lg border-l-8 border-[#a4c3a2] hover:scale-105 transition-transform"><h3 className="text-2xl font-bold text-[#1e3a2f] mb-2">Symbolsprache</h3><p className="text-[#4a6b58]">Formeln, Gleichungen</p></div><div className="bg-white p-8 rounded-2xl shadow-lg border-l-8 border-[#2a4f40] hover:scale-105 transition-transform"><h3 className="text-2xl font-bold text-[#1e3a2f] mb-2">Nonverbale Sprache</h3><p className="text-[#4a6b58]">Gesten, Mimik, Bewegung</p></div></div></div>);
+          const renderTheory6 = () => (<div className="h-full p-12 flex flex-col justify-center"><h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-10 text-center">4 Prinzipien (Leisen)</h2><div className="space-y-4 max-w-5xl mx-auto w-full"><div className="flex gap-6 items-center bg-white p-6 rounded-xl shadow border border-[#e0e0e0]"><div className="text-4xl font-bold text-[#cbd5c0]">1</div><div><h3 className="text-xl font-bold text-[#1e3a2f]">Bildungssprachliches Sprachbad</h3><p className="text-[#4a6b58]">Lernen durch erfolgreiche Sprachhandlungen</p></div></div><div className="flex gap-6 items-center bg-white p-6 rounded-xl shadow border border-[#e0e0e0]"><div className="text-4xl font-bold text-[#cbd5c0]">2</div><div><h3 className="text-xl font-bold text-[#1e3a2f]">Wechsel der Darstellungsformen</h3><p className="text-[#4a6b58]">Verbalisieren, Visualisieren, Formalisieren</p></div></div><div className="flex gap-6 items-center bg-white p-6 rounded-xl shadow border border-[#e0e0e0]"><div className="text-4xl font-bold text-[#cbd5c0]">3</div><div><h3 className="text-xl font-bold text-[#1e3a2f]">Kalkulierte kogn. & sprachl. Herausforderung</h3><p className="text-[#4a6b58]">Aufgaben knapp über dem Können</p></div></div><div className="flex gap-6 items-center bg-[#1e3a2f] text-white p-6 rounded-xl shadow-lg border border-[#e0e0e0]"><div className="text-4xl font-bold text-[#609966]">4</div><div><h3 className="text-xl font-bold mb-2">Heterogenisierung nach oben</h3><p className="text-sm opacity-90">Starke fordern, Schwache stützen (Scaffolds). Nicht trivialisieren!</p></div></div></div></div>);
+          const renderTheory7 = () => (<div className="flex flex-col h-full p-12 items-center justify-center"><h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-12">Drei Wege mit Sprachproblemen</h2><div className="grid grid-cols-3 gap-6 w-full"><div className="bg-red-50 p-8 rounded-2xl border-t-8 border-red-400 shadow-lg text-center"><h3 className="text-2xl font-bold text-red-900 mb-4">Defensiv</h3><p className="text-red-800 mb-6">Sprache vereinfachen</p><span className="inline-block bg-red-200 text-red-900 px-3 py-1 rounded-full text-sm font-bold">Kurzfristig</span></div><div className="bg-[#e8f0e6] p-8 rounded-2xl border-t-8 border-[#609966] shadow-lg text-center transform scale-105"><h3 className="text-2xl font-bold text-[#1e3a2f] mb-4">Offensiv</h3><p className="text-[#4a6b58] mb-6">Scaffolds bereitstellen & abbauen</p><span className="inline-block bg-[#609966] text-white px-3 py-1 rounded-full text-sm font-bold">Kurzfristig</span></div><div className="bg-blue-50 p-8 rounded-2xl border-t-8 border-blue-400 shadow-lg text-center"><h3 className="text-2xl font-bold text-blue-900 mb-4">Stärkend</h3><p className="text-blue-800 mb-6">Strategien aufbauen (Lesen/Schreiben)</p><span className="inline-block bg-blue-200 text-blue-900 px-3 py-1 rounded-full text-sm font-bold">Langfristig</span></div></div></div>);
+          const renderTheory8 = () => (<div className="h-full p-12 overflow-y-auto"><div className="max-w-5xl mx-auto space-y-16 pb-12"><section><h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-6">Zuordnung</h2><div className="bg-white rounded-xl shadow overflow-hidden"><table className="w-full text-left"><thead className="bg-[#1e3a2f] text-white"><tr><th className="p-4">Maßnahme</th><th className="p-4">Weg</th></tr></thead><tbody className="divide-y divide-gray-200"><tr className="bg-red-50"><td className="p-4">Text vereinfachen</td><td className="p-4 font-bold text-red-800">defensiv</td></tr><tr className="bg-green-50"><td className="p-4">Satzanfänge / Redemittel</td><td className="p-4 font-bold text-green-800">offensiv</td></tr><tr className="bg-blue-50"><td className="p-4">Wortschatz systematisch aufbauen</td><td className="p-4 font-bold text-blue-800">stärkend</td></tr></tbody></table></div></section><section><h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-6 flex items-center gap-2"><Hammer/> Scaffolding-Werkzeuge</h2><div className="grid grid-cols-3 gap-6"><div className="bg-[#f4f1ea] p-6 rounded-xl border border-[#cbd5c0]"><h4 className="font-bold mb-3 text-[#1e3a2f]">Spezifisch:</h4><ul className="list-disc list-inside text-[#4a6b58]"><li>Wortliste</li><li>Wortfeld</li></ul></div><div className="bg-[#f4f1ea] p-6 rounded-xl border border-[#cbd5c0]"><h4 className="font-bold mb-3 text-[#1e3a2f]">Universell:</h4><ul className="list-disc list-inside text-[#4a6b58]"><li>Redemittel</li><li>Tabellen</li></ul></div><div className="bg-[#f4f1ea] p-6 rounded-xl border border-[#cbd5c0]"><h4 className="font-bold mb-3 text-[#1e3a2f]">Schüleraktiv:</h4><ul className="list-disc list-inside text-[#4a6b58]"><li>Begriffsmatrix</li><li>Denkblasen</li></ul></div></div></section><section className="bg-[#1e3a2f] text-white p-8 rounded-2xl shadow-xl"><h2 className="text-3xl font-serif font-bold mb-6">Unterscheidung ist wichtig!</h2><div className="grid grid-cols-2 gap-12"><div><h4 className="text-xl font-bold text-[#a4c3a2] mb-2">Sprachförderung</h4><p>Zielgruppe: Einzelne (DaZ)</p><p>Maßnahme: Zusatzunterricht</p></div><div className="border-l-2 border-[#609966] pl-8"><h4 className="text-xl font-bold text-[#609966] mb-2">Sprachbildung</h4><p>Zielgruppe: ALLE (Klasse)</p><p>Maßnahme: Fachintegriert</p></div></div></section></div></div>);
+
+          const renderDiagnosis = () => (<div className="w-full h-full flex bg-[#e8f1e9] p-0 overflow-hidden relative items-center justify-center"><div className="max-w-5xl w-full grid grid-cols-2 gap-12 p-8"><div className="flex flex-col justify-center"><h2 className="text-5xl font-serif font-bold text-[#1e3a2f] mb-6">Das Problem</h2><p className="text-xl text-[#4a6b58] mb-8">Warum scheitern Schüler?</p><div className="bg-white p-6 rounded-xl shadow-lg border-l-8 border-[#d6e6d0]"><h4 className="font-bold text-[#1e3a2f] mb-2 uppercase tracking-wider text-sm">Typische Schülerantwort</h4><p className="font-handwriting text-2xl text-slate-600 leading-relaxed italic">"Handys sind voll doof verboten, weil dann kann ich nicht zocken und das nervt voll."</p></div></div><div className="bg-[#1e3a2f] p-10 rounded-[2rem] text-[#f4f1ea] flex flex-col justify-center"><h3 className="text-2xl font-bold text-[#a4c3a2] mb-6 border-b border-[#3a6350] pb-4">Diagnose: Die doppelte Hürde</h3><div className="space-y-6"><div><span className="font-bold text-white block mb-1">BICS (Alltagssprache)</span><p className="text-sm text-[#cbd5c0]">Fließend vorhanden ("voll doof", "nervt").</p></div><div><span className="font-bold text-[#ff6b6b] block mb-1">CALP (Bildungssprache)</span><p className="text-sm text-[#cbd5c0]">Fehlt komplett: Keine Kausalität, keine Fachbegriffe.</p></div></div></div></div><DidacticLayer visible={showDidactic}>{getDidacticContent()}</DidacticLayer></div>);
+          const renderSimP1 = () => (<div className="flex h-full w-full"><div className="w-1/2 p-12 flex items-center justify-center bg-[#f4f1ea]"><div className="bg-white p-4 border border-[#d6e6d0] shadow-2xl rotate-1 max-w-xl cursor-zoom-in" onClick={() => setIsZoomed(IMAGE_ASSETS.caricature)}><img src={IMAGE_ASSETS.caricature} className="w-full h-full object-cover" alt="Karikatur" /><div className="absolute top-2 right-2 text-gray-400 opacity-50"><Maximize2 size={24}/></div></div></div><div className="w-1/2 bg-[#1e3a2f] text-[#f4f1ea] p-12 flex flex-col justify-center"><h2 className="text-5xl font-serif font-bold mb-8">Einstieg: Handyverbot?!</h2><div className="bg-[#2a4f40] p-6 rounded-xl border-l-4 border-[#609966]"><p className="font-bold text-[#a4c3a2] mb-2">Impuls:</p><p>"Beschreibt kurz die Situation. Was geht euch durch den Kopf?"</p></div></div><DidacticLayer visible={showDidactic}>{getDidacticContent()}</DidacticLayer></div>);
+          const renderWorkshop = () => (<div className="flex flex-col items-center justify-center h-full text-[#1e3a2f]"><PenLine size={64} className="mb-4 text-[#609966]"/><h2 className="text-5xl font-serif font-bold mb-4">Workshop-Phase</h2><p className="text-xl">Bitte nutzen Sie jetzt die ausgeteilten Materialien (M1-M3).</p></div>);
+          const renderSimP2 = () => (<div className="flex h-full bg-[#f4f1ea] w-full"><div className="w-1/2 bg-[#d6e6d0] p-12 flex flex-col justify-center relative"><div className="grid grid-cols-2 gap-4"><div className="bg-white p-6 rounded-xl shadow-lg col-span-2 flex items-center gap-4 cursor-pointer hover:scale-105 transition-transform" onClick={() => setIsZoomed(IMAGE_ASSETS.material1)}><div className="bg-[#1e3a2f] w-12 h-12 flex items-center justify-center rounded-lg text-white font-bold shrink-0">M1</div><div><h4 className="font-bold text-[#1e3a2f]">Zeitungsartikel</h4></div></div><div className="bg-white p-6 rounded-xl shadow-lg flex items-center gap-4 cursor-pointer hover:scale-105 transition-transform" onClick={() => setIsZoomed(IMAGE_ASSETS.material2)}><div className="bg-[#1e3a2f] w-12 h-12 flex items-center justify-center rounded-lg text-white font-bold shrink-0">M2</div><div><h4 className="font-bold text-[#1e3a2f]">Interview</h4></div></div><div className="bg-white p-6 rounded-xl shadow-lg flex items-center gap-4 cursor-pointer border-l-4 border-[#609966] hover:scale-105 transition-transform" onClick={() => setIsZoomed(IMAGE_ASSETS.material3)}><div className="bg-[#609966] w-12 h-12 flex items-center justify-center rounded-lg text-white font-bold shrink-0">M3</div><div><h4 className="font-bold text-[#1e3a2f]">Statistik</h4></div></div></div></div><div className="w-1/2 p-12 flex flex-col justify-center"><h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-8">Erarbeitung</h2><div className="bg-white p-8 rounded-[2rem] shadow-sm border border-[#e0e0e0]"><h3 className="text-xl font-bold text-[#609966] mb-4">Arbeitsauftrag</h3><ul className="space-y-4 text-xl text-[#1e3a2f]"><li className="flex gap-3"><FileText/> Lest M1 und M2.</li><li className="flex gap-3"><BarChart/> Wertet die Statistik (M3) aus.</li><li className="flex gap-3"><PenTool/> Erstellt eine Pro-Contra-Tabelle.</li></ul></div></div><DidacticLayer visible={showDidactic}>{getDidacticContent()}</DidacticLayer></div>);
+          const renderSimP3 = () => (<div className="flex h-full bg-[#1e3a2f] text-[#f4f1ea] w-full"><div className="w-1/3 p-12 flex flex-col justify-center border-r border-[#3a6350]"><h2 className="text-4xl font-serif font-bold mb-4">Produktion</h2><button onClick={() => setScaffoldingActive(!scaffoldingActive)} className="bg-[#609966] text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 w-max hover:bg-[#4a8a5a] transition-colors"><Hammer size={18}/> Hilfe gefällig?</button></div><div className="w-2/3 p-12 grid grid-cols-2 gap-6 content-center"><div className={`bg-[#f4f1ea] p-6 rounded-xl text-[#1e3a2f] transition-all duration-500 cursor-pointer ${scaffoldingActive ? 'opacity-100 translate-y-0' : 'opacity-30 translate-y-4 blur-[2px]'}`} onClick={() => scaffoldingActive && setIsZoomed(IMAGE_ASSETS.scaffoldA)}><div className="flex justify-between mb-2 border-b border-[#cbd5c0] pb-2"><span className="font-bold">Niveau A (Wortgeländer)</span><Maximize2 size={16}/></div><div className="h-32 bg-[#e8f0e6] rounded overflow-hidden mt-2 border border-[#cbd5c0]"><img src={IMAGE_ASSETS.scaffoldA} className="w-full h-full object-cover"/></div></div><div className={`bg-[#f4f1ea] p-6 rounded-xl text-[#1e3a2f] transition-all duration-500 cursor-pointer ${scaffoldingActive ? 'opacity-100 translate-y-0' : 'opacity-30 translate-y-4 blur-[2px]'}`} onClick={() => scaffoldingActive && setIsZoomed(IMAGE_ASSETS.scaffoldB)}><div className="flex justify-between mb-2 border-b border-[#cbd5c0] pb-2"><span className="font-bold">Niveau B (Satzanfänge)</span><Maximize2 size={16}/></div><div className="h-32 bg-[#e8f0e6] rounded overflow-hidden mt-2 border border-[#cbd5c0]"><img src={IMAGE_ASSETS.scaffoldB} className="w-full h-full object-cover"/></div></div></div><DidacticLayer visible={showDidactic}>{getDidacticContent()}</DidacticLayer></div>);
+          const renderSimP4 = () => (<div className="flex h-full p-12 items-center gap-12 bg-[#f4f1ea] w-full"><div className="w-1/2"><h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-8">Reflexion: Text-Check</h2><div className="text-[#4a6b58] italic p-4 border-l-2 border-[#609966]">"Tauscht euren Text. Gebt euch Tipps."</div></div><div className="w-1/2 bg-white p-8 rounded-[2rem] shadow-xl border-t-8 border-[#1e3a2f]"><h3 className="font-bold text-[#1e3a2f] mb-6 flex items-center gap-3 text-2xl"><CheckSquare/> Checkliste</h3><ul className="space-y-4 text-lg text-[#1e3a2f]"><li>☐ These klar?</li><li>☐ Verbindungswörter genutzt?</li><li>☐ Fachbegriffe verwendet?</li></ul></div><DidacticLayer visible={showDidactic}>{getDidacticContent()}</DidacticLayer></div>);
+
+          // === DETAILED PRINCIPLE SLIDES ===
+
+          const renderDetailP1 = () => (
+            <div className="flex flex-col h-full p-12">
+               <h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-4 text-center">Das Prinzip vom bildungssprachlichen Sprachbad</h2>
+               <div className="bg-white p-6 rounded-xl shadow border-l-8 border-[#1e3a2f] mb-8 max-w-4xl mx-auto">
+                  <p className="text-lg text-[#4a6b58]">Die Bildungssprache wird durch die erfolgreiche Bewältigung von Sprachhandlungen (= sprachliche Standardsituationen) in einem anregenden Bildungssprachbad gelernt.</p>
+               </div>
+               <div className="flex-1 flex justify-center items-center cursor-zoom-in" onClick={() => setIsZoomed(IMAGE_ASSETS.p1_grafik)}>
+                  <img src={IMAGE_ASSETS.p1_grafik} className="max-h-[50vh] object-contain rounded-xl shadow-lg" alt="Sprachbad Grafik" />
+               </div>
+            </div>
+          );
+
+          const renderDetailP1App = () => (
+            <div className="flex flex-col h-full p-12 overflow-y-auto">
+               <h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-8 text-center leading-tight">Inwiefern entspricht der Artikel in seiner Originalfassung<br/>nicht den Prinzipien sprachsensiblen Unterrichts?</h2>
+               <div className="flex gap-12 justify-center mb-12">
+                  <div className="bg-white p-4 rounded-xl shadow-lg border border-[#e0e0e0] w-48 h-48 flex items-center justify-center cursor-zoom-in" onClick={() => setIsZoomed(IMAGE_ASSETS.p1_qr)}>
+                     <img src={IMAGE_ASSETS.p1_qr} alt="QR Code" className="w-full h-full object-contain" />
+                  </div>
+               </div>
+               <div className="space-y-6 max-w-3xl mx-auto w-full">
+                  <button onClick={() => setShowSolutions(!showSolutions)} className="w-full bg-[#1e3a2f] text-white p-4 rounded-xl font-bold flex justify-between items-center shadow hover:bg-[#2a4f40]">
+                     <span>Lösungsansätze</span>{showSolutions ? <ChevronRight className="rotate-90"/> : <ChevronRight/>}
+                  </button>
+                  <AnimatePresence>{showSolutions && (<motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden bg-white rounded-xl shadow p-6 border border-[#e0e0e0]"><ul className="list-disc list-inside space-y-2 text-[#4a6b58]"><li>Begriffe in Fußnoten definieren</li><li>Begriffe umschreiben</li><li>Text anpassen (siehe Beispieltext)</li></ul></motion.div>)}</AnimatePresence>
+                  
+                  <div className="w-full">
+                     <button onClick={() => setIsZoomed(IMAGE_ASSETS.p1_text_example)} className="w-full bg-[#609966] text-white p-4 rounded-xl font-bold flex justify-center items-center shadow hover:bg-[#4a8a5a] gap-2">
+                        <File size={20}/> 📄 Original-Artikel ansehen (Vollbild)
+                     </button>
+                  </div>
+
+                  <div className="bg-[#f4f1ea] p-6 rounded-xl border-l-8 border-[#a4c3a2] shadow-sm mt-8">
+                     <div className="flex items-start gap-4">
+                        <Lightbulb className="text-[#a4c3a2] shrink-0 mt-1" size={24}/>
+                        <p className="text-[#1e3a2f] font-serif font-bold text-lg">Bildungssprache wird nicht erklärt, sondern durch wiederholtes Anwenden gelernt!</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          );
+
+          // SLIDE 18
+          const renderDetailP1Ex = () => (
+            <div className="flex h-full p-12 gap-12 items-center">
+               <div className="w-1/3 flex flex-col justify-center space-y-6">
+                  <h3 className="text-3xl font-serif font-bold text-[#1e3a2f]">Analyse am Beispiel</h3>
+                  <div className="space-y-4">
+                     <div className="bg-white p-4 rounded-lg shadow border-l-4 border-[#609966] text-[#1e3a2f] font-medium flex items-center gap-3"><span className="bg-[#609966] text-white w-6 h-6 flex items-center justify-center rounded-full text-xs">1</span> Konfrontation mit Bildungssprache</div>
+                     <div className="bg-white p-4 rounded-lg shadow border-l-4 border-[#609966] text-[#1e3a2f] font-medium flex items-center gap-3"><span className="bg-[#609966] text-white w-6 h-6 flex items-center justify-center rounded-full text-xs">2</span> Sprachliche Modellierung durch Satzanfänge</div>
+                     <div className="bg-white p-4 rounded-lg shadow border-l-4 border-[#609966] text-[#1e3a2f] font-medium flex items-center gap-3"><span className="bg-[#609966] text-white w-6 h-6 flex items-center justify-center rounded-full text-xs">3</span> Sprachliches Gerüst (Scaffolding)</div>
+                     <div className="bg-white p-4 rounded-lg shadow border-l-4 border-[#609966] text-[#1e3a2f] font-medium flex items-center gap-3"><span className="bg-[#609966] text-white w-6 h-6 flex items-center justify-center rounded-full text-xs">4</span> Funktionale Einbettung in Fachlernen</div>
+                  </div>
+               </div>
+               <div className="w-2/3 h-full flex items-center justify-center cursor-zoom-in" onClick={() => setIsZoomed(IMAGE_ASSETS.p1_schoolbook)}>
+                  <img src={IMAGE_ASSETS.p1_schoolbook} className="max-h-full object-contain rounded-xl shadow-2xl border border-[#e0e0e0]" alt="Schulbuchseite" />
+                  <div className="absolute bottom-4 right-12 bg-black/50 text-white px-3 py-1 rounded-full text-sm backdrop-blur flex items-center gap-2 pointer-events-none"><Maximize2 size={14}/> Zum Vergrößern klicken</div>
+               </div>
+            </div>
+          );
+
+          // === PRINCIPLE 2 ===
+          const renderDetailP2 = () => (
+             <div className="flex flex-col h-full p-12 overflow-y-auto items-center">
+                <h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-6">2. Das Prinzip vom Wechsel der Darstellungsformen</h2>
+                <div className="flex-1 w-full max-w-5xl flex items-center justify-center cursor-zoom-in" onClick={() => setIsZoomed(IMAGE_ASSETS.p2_overview)}>
+                   <img src={IMAGE_ASSETS.p2_overview} className="max-h-[60vh] object-contain rounded-xl shadow-lg border border-[#e0e0e0]" alt="Schaubild Schlüssel"/>
                 </div>
-                
-                <h1 className="text-5xl md:text-7xl font-serif font-black text-[#1e3a2f] mb-8 leading-tight tracking-tight">
-                  Sprachsensibler Unterricht
-                </h1>
-                
-                <div className="bg-white/60 backdrop-blur-sm p-8 rounded-[2rem] shadow-sm inline-block max-w-4xl mx-auto border border-[#fff]">
-                   <p className="text-xl md:text-2xl text-[#3a5a40] font-light leading-relaxed mb-6">
-                     Wie können Schüler*innen mit Sprachhürden gefördert werden?
-                   </p>
-                   
-                   <div className="pt-6 border-t border-[#d6e6d0] flex justify-center gap-8 text-[#1e3a2f] flex-wrap">
-                      {['Köksal', 'Sagir', 'Sprengnöder', 'Pacharzyna'].map((name, i) => (
-                        <div key={i} className="flex flex-col items-center gap-1">
-                           <div className="w-10 h-10 bg-[#1e3a2f] text-white rounded-full flex items-center justify-center font-bold text-xs">{name[0]}</div>
-                           <span className="font-bold text-sm">{name}</span>
-                        </div>
-                      ))}
+             </div>
+          );
+
+          const renderDetailP2Task = () => (
+             <div className="flex flex-col h-full p-8">
+                <h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-6">Beispielaufgabe</h2>
+                <div className="flex gap-8 h-full overflow-hidden">
+                   <div className="w-1/2 flex flex-col justify-center gap-6">
+                      <div className="space-y-6">
+                          <p className="text-2xl lg:text-3xl font-bold text-[#1e3a2f] leading-snug">Welche Darstellungsformen findet ihr im Text?</p>
+                          <p className="text-2xl lg:text-3xl font-bold text-[#1e3a2f] leading-snug">Sind diese typisch für das Unterrichtsfach Deutsch?</p>
+                          <p className="text-2xl lg:text-3xl font-bold text-[#1e3a2f] leading-snug">Welche anderen visuellen Darstellungen kennt ihr?</p>
+                          <div className="bg-white/50 p-4 rounded-xl border-l-4 border-[#609966]">
+                             <p className="text-xl lg:text-2xl font-bold text-[#1e3a2f] leading-snug">Stellt Vermutungen auf: Warum ist ein Darstellungswechsel sprachsensibel?</p>
+                          </div>
+                      </div>
+                   </div>
+                   <div className="w-1/2 flex flex-col gap-4 min-h-0">
+                      <div className="flex-1 bg-white p-2 rounded-xl shadow border border-[#e0e0e0] flex items-center justify-center cursor-zoom-in min-h-0" onClick={() => setIsZoomed(IMAGE_ASSETS.p2_text_braun)}>
+                         <img src={IMAGE_ASSETS.p2_text_braun} className="max-h-full max-w-full object-contain" alt="Text Braunsche Röhre"/>
+                      </div>
+                      <div className="flex-1 bg-white p-2 rounded-xl shadow border border-[#e0e0e0] flex items-center justify-center cursor-zoom-in min-h-0" onClick={() => setIsZoomed(IMAGE_ASSETS.p2_abbildung)}>
+                         <img src={IMAGE_ASSETS.p2_abbildung} className="max-h-full max-w-full object-contain" alt="Zweites Beispiel"/>
+                      </div>
                    </div>
                 </div>
-              </motion.div>
+             </div>
+          );
+
+          const renderDetailP2Sol = () => (
+             <div className="flex flex-col h-full p-12 overflow-y-auto">
+                <h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-6">Lösungen & Fazit</h2>
+                
+                <div className="space-y-4 mb-8">
+                     <div className="bg-white p-6 rounded-lg shadow border-l-8 border-[#1e3a2f]"><strong className="text-[#1e3a2f] block text-lg mb-1">1. Formen:</strong> Text, Bilder, Schaubild (Wechselseitige Erschließung).</div>
+                     <div className="bg-white p-6 rounded-lg shadow border-l-8 border-[#1e3a2f]"><strong className="text-[#1e3a2f] block text-lg mb-1">2. Spezifisch?</strong> Text ja, Bilder nein (aber als Stütze wichtig).</div>
+                     <div className="bg-white p-6 rounded-lg shadow border-l-8 border-[#1e3a2f]"><strong className="text-[#1e3a2f] block text-lg mb-1">3. Andere:</strong> Diagramme, Karikaturen, Versuche, Anleitungen.</div>
+                     <div className="bg-white p-6 rounded-lg shadow border-l-8 border-[#1e3a2f]"><strong className="text-[#1e3a2f] block text-lg mb-1">4. Warum sprachsensibel?</strong> Entlastung, wechselseitige Beeinflussung &rarr; Positiver Lerneffekt.</div>
+                </div>
+
+                <div className="bg-[#1e3a2f] text-white p-8 rounded-xl shadow-xl mt-auto">
+                   <h3 className="font-bold text-2xl mb-4 text-[#a4c3a2]">Fazit: Deutschunterricht</h3>
+                   <p className="text-xl leading-relaxed">Es geht vor allem um geschriebene Texte. <br/>➔ Deshalb Rückgriff auf andere Formen besonders wichtig: Anregung, Motivation, Visualisierung!</p>
+                </div>
+             </div>
+          );
+
+          // SLIDE 22 (Updated P3 Theory)
+          const renderDetailP3 = () => (
+            <div className="flex flex-col h-full p-12 items-center">
+               <h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-8 text-center">3. Kalkulierte kognitive & sprachliche Herausforderung</h2>
+               <div className="bg-white p-8 rounded-2xl shadow-lg border-l-8 border-[#609966] mb-8 max-w-4xl w-full">
+                  <ul className="list-disc list-inside space-y-4 text-[#4a6b58] text-xl">
+                     <li>Anforderungen liegen <strong>knapp über</strong> dem individuellen Sprachvermögen.</li>
+                     <li>Ziel: Erfolgreiche Sprachprodukte (Lesen, Schreiben, Lernen).</li>
+                     <li>Sprachprodukte müssen nicht fehlerfrei sein, aber die Aufgabenstellung erfüllen.</li>
+                  </ul>
+               </div>
+               
+               <div className="flex-1 flex justify-center items-center cursor-zoom-in w-full max-w-4xl" onClick={() => setIsZoomed(IMAGE_ASSETS.p3_grafik)}>
+                  <img src={IMAGE_ASSETS.p3_grafik} className="max-h-[40vh] object-contain rounded-xl shadow-lg border border-[#e0e0e0]" alt="Grafik Herausforderung" />
+               </div>
+
+               <div className="bg-red-50 p-4 rounded-xl border border-red-200 mt-6 flex items-center gap-3 w-full max-w-4xl shadow-sm">
+                  <AlertTriangle className="text-red-500 shrink-0"/>
+                  <span className="text-red-800 font-bold">Überforderung und Unterforderung be- und verhindern das Lernen!</span>
+               </div>
             </div>
           );
 
-          const renderTheory = () => (
-            <div className="w-full h-full flex flex-col bg-[#f4f1ea] overflow-hidden relative">
-              <div className="absolute top-[-10%] right-[-5%] w-[50vh] h-[50vh] bg-[#d6e6d0] pointer-events-none z-0" style={{ borderRadius: blobShape3 }}></div>
-              
-              <div className="flex justify-center gap-4 pt-8 z-10">
-                 {[
-                    { id: 'concepts', label: 'Sprache & Hürden', icon: <MessageCircle size={18} /> },
-                    { id: 'example', label: 'Beispiel: Wasser', icon: <Thermometer size={18} /> },
-                    { id: 'principles', label: '4 Prinzipien & Scaffolds', icon: <Layers size={18} /> }
-                 ].map(tab => (
-                    <button
-                       key={tab.id}
-                       onClick={() => setTheoryTab(tab.id)}
-                       className={`px-6 py-3 rounded-full flex items-center gap-2 font-bold transition-all shadow-md ${
-                          theoryTab === tab.id 
-                          ? 'bg-[#1e3a2f] text-white scale-105' 
-                          : 'bg-white text-[#1e3a2f] hover:bg-[#e8f0e6]'
-                       }`}
-                    >
-                       {tab.icon} {tab.label}
-                    </button>
-                 ))}
-              </div>
-
-              <div className="flex-1 p-8 lg:p-12 relative z-10 flex items-center justify-center">
-                 <AnimatePresence mode='wait'>
-                    
-                    {/* TAB 1: CONCEPTS */}
-                    {theoryTab === 'concepts' && (
-                       <motion.div 
-                          key="concepts"
-                          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                          className="w-full max-w-5xl grid grid-cols-2 gap-12"
-                       >
-                          <div className="space-y-6">
-                             <h2 className="text-4xl font-serif font-bold text-[#1e3a2f]">Warum sprachsensibel?</h2>
-                             <p className="text-lg text-[#4a6b58] leading-relaxed">
-                                Fachunterricht ist der Ort, an dem Sprache bewusst als <span className="font-bold text-[#1e3a2f]">Werkzeug des Denkens</span> eingesetzt wird.
-                             </p>
-                             <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-[#609966]">
-                                <h4 className="font-bold text-[#1e3a2f] mb-2 flex items-center gap-2"><AlertTriangle size={18}/> Sprachliche Hürden</h4>
-                                <ul className="list-disc list-inside text-sm text-[#4a6b58] space-y-1">
-                                   <li>Abstrakte Fachbegriffe</li>
-                                   <li>Komplexe Satzstrukturen (Hypotaxen)</li>
-                                   <li>Logische Verknüpfungen (Wenn... dann...)</li>
-                                </ul>
-                             </div>
-                          </div>
-                          <div className="space-y-6">
-                             <div className="bg-[#1e3a2f] p-6 rounded-xl text-white shadow-xl">
-                                <h3 className="font-bold text-xl mb-4 text-[#a4c3a2]">Die 3 Sprachebenen</h3>
-                                <div className="space-y-4">
-                                   <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded bg-[#a4c3a2] text-[#1e3a2f] flex items-center justify-center font-bold">1</div>
-                                      <div><strong className="block">Alltagssprache</strong> <span className="text-sm opacity-80">Werkzeug der Kommunikation (BICS)</span></div>
-                                   </div>
-                                   <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded bg-[#609966] text-white flex items-center justify-center font-bold">2</div>
-                                      <div><strong className="block">Unterrichtssprache</strong> <span className="text-sm opacity-80">Die "Leiter" zur Fachsprache</span></div>
-                                   </div>
-                                   <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded bg-[#2a4f40] border border-[#a4c3a2] text-white flex items-center justify-center font-bold">3</div>
-                                      <div><strong className="block">Bildungssprache</strong> <span className="text-sm opacity-80">Werkzeug des Denkens (CALP)</span></div>
-                                   </div>
-                                </div>
-                             </div>
-                             
-                             <div className="bg-white p-6 rounded-xl shadow border border-[#e0e0e0]">
-                                <h4 className="font-bold text-[#1e3a2f] mb-2">Beispiel: "Druck"</h4>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                   <div className="bg-red-50 p-2 rounded text-red-900">
-                                      <strong>Geschichte:</strong><br/>Politischer Zwang
-                                   </div>
-                                   <div className="bg-blue-50 p-2 rounded text-blue-900">
-                                      <strong>Physik:</strong><br/>Kraft pro Fläche
-                                   </div>
-                                </div>
-                             </div>
-                          </div>
-                       </motion.div>
-                    )}
-
-                    {/* TAB 2: EXAMPLE */}
-                    {theoryTab === 'example' && (
-                       <motion.div 
-                          key="example"
-                          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                          className="w-full max-w-5xl"
-                       >
-                          <h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-8 text-center">Vergleich: Aussage A vs. Aussage B</h2>
-                          
-                          <div className="flex flex-col md:flex-row gap-8 items-stretch">
-                             {/* Statement A */}
-                             <div className="flex-1 bg-white p-8 rounded-2xl shadow-lg border border-red-100 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-2 h-full bg-red-400"></div>
-                                <h3 className="text-xl font-bold text-red-800 mb-4">Aussage A</h3>
-                                <p className="font-handwriting text-2xl text-gray-600 mb-6 italic">
-                                   "Die Zeit vergeht <span className="bg-red-100 px-1 rounded font-bold">und</span> die Temperatur des Wassers steigt."
-                                </p>
-                                <ul className="text-sm text-gray-600 space-y-2">
-                                   <li className="flex items-center gap-2"><X size={16} className="text-red-500"/> Reine Reihung (Additiv)</li>
-                                   <li className="flex items-center gap-2"><X size={16} className="text-red-500"/> Einzelbeobachtungen</li>
-                                   <li className="flex items-center gap-2"><X size={16} className="text-red-500"/> Keine Kausalität</li>
-                                </ul>
-                             </div>
-
-                             {/* Arrow */}
-                             <div className="flex items-center justify-center text-[#1e3a2f]">
-                                <ChevronRight size={48} />
-                             </div>
-
-                             {/* Statement B */}
-                             <div className="flex-1 bg-[#1e3a2f] p-8 rounded-2xl shadow-xl text-white relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-2 h-full bg-[#609966]"></div>
-                                <h3 className="text-xl font-bold text-[#a4c3a2] mb-4">Aussage B</h3>
-                                <p className="font-handwriting text-2xl text-white mb-6 italic">
-                                   "<span className="bg-[#609966] px-1 rounded font-bold">Je</span> länger das Wasser erhitzt wird, <span className="bg-[#609966] px-1 rounded font-bold">desto</span> höher wird die Temperatur."
-                                </p>
-                                <ul className="text-sm text-gray-300 space-y-2">
-                                   <li className="flex items-center gap-2"><CheckSquare size={16} className="text-[#609966]"/> Kausale Verknüpfung</li>
-                                   <li className="flex items-center gap-2"><CheckSquare size={16} className="text-[#609966]"/> Fachsprachliche Präzision</li>
-                                   <li className="flex items-center gap-2"><CheckSquare size={16} className="text-[#609966]"/> Komparativnutzung</li>
-                                </ul>
-                             </div>
-                          </div>
-                          <p className="text-center mt-8 text-[#4a6b58] italic">
-                             "Inhaltlich meinen beide das Gleiche, aber nur B zeigt fachliches Durchdringen."
-                          </p>
-                       </motion.div>
-                    )}
-
-                    {/* TAB 3: PRINCIPLES */}
-                    {theoryTab === 'principles' && (
-                       <motion.div 
-                          key="principles"
-                          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-                          className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8"
-                       >
-                          {/* Left: 4 Principles */}
-                          <div className="bg-white p-8 rounded-2xl shadow-lg border border-[#e0e0e0]">
-                             <h3 className="text-2xl font-bold text-[#1e3a2f] mb-6 border-b pb-2">Die 4 Prinzipien</h3>
-                             <div className="space-y-4">
-                                <div className="p-4 bg-[#f4f1ea] rounded-lg border-l-4 border-[#1e3a2f]">
-                                   <strong className="block text-[#1e3a2f]">1. Bildungssprachliches Sprachbad</strong>
-                                   <span className="text-sm text-[#4a6b58]">Lehrkraft als Sprachvorbild (nicht nur "Eintauchen", sondern modellieren).</span>
-                                </div>
-                                <div className="p-4 bg-[#f4f1ea] rounded-lg border-l-4 border-[#2a4f40]">
-                                   <strong className="block text-[#1e3a2f]">2. Darstellungswechsel</strong>
-                                   <span className="text-sm text-[#4a6b58]">Diagramm ↔ Text ↔ Formel (Dual Coding).</span>
-                                </div>
-                                <div className="p-4 bg-[#f4f1ea] rounded-lg border-l-4 border-[#609966]">
-                                   <strong className="block text-[#1e3a2f]">3. Kalkulierte Herausforderung</strong>
-                                   <span className="text-sm text-[#4a6b58]">Zone der nächsten Entwicklung (knapp über aktuellem Stand).</span>
-                                </div>
-                                <div className="p-4 bg-[#f4f1ea] rounded-lg border-l-4 border-[#a4c3a2]">
-                                   <strong className="block text-[#1e3a2f]">4. Heterogenisierung nach oben</strong>
-                                   <span className="text-sm text-[#4a6b58]">Scaffolds für Schwache, Freiraum für Starke.</span>
-                                </div>
-                             </div>
-                          </div>
-
-                          {/* Right: Scaffolding */}
-                          <div className="bg-[#1e3a2f] p-8 rounded-2xl shadow-xl text-white flex flex-col justify-center">
-                             <h3 className="text-2xl font-bold text-[#a4c3a2] mb-6 flex items-center gap-2">
-                                <Hammer size={24} /> Scaffolding
-                             </h3>
-                             <p className="mb-6 leading-relaxed opacity-90">
-                                Ein temporäres "Baugerüst", das Unterstützung bietet, um den nächsthöheren Lernschritt zu ermöglichen. Ziel ist der schrittweise Abbau ("Fading").
-                             </p>
-                             
-                             <div className="grid grid-cols-2 gap-3">
-                                {['Wortlisten', 'Sprechblasen', 'Wortgeländer', 'Lernplakate', 'Begriffsnetze', 'Musterlösungen'].map(scaffold => (
-                                   <div key={scaffold} className="bg-[#2a4f40] px-3 py-2 rounded text-sm text-center border border-[#3a6350]">
-                                      {scaffold}
-                                   </div>
-                                ))}
-                             </div>
-                          </div>
-                       </motion.div>
-                    )}
-
-                 </AnimatePresence>
-              </div>
-            </div>
-          );
-
-          const renderDiagnosis = () => (
-            <div className="w-full h-full flex bg-[#e8f1e9] p-0 overflow-hidden relative items-center justify-center">
-              <div className="max-w-5xl w-full grid grid-cols-2 gap-12 p-8">
-                 <div className="flex flex-col justify-center">
-                    <h2 className="text-5xl font-serif font-bold text-[#1e3a2f] mb-6">Das Problem</h2>
-                    <p className="text-xl text-[#4a6b58] mb-8">
-                       Warum scheitern Schüler, obwohl sie den Inhalt eigentlich verstehen?
-                    </p>
-                    <div className="bg-white p-6 rounded-xl shadow-lg border-l-8 border-[#d6e6d0]">
-                       <h4 className="font-bold text-[#1e3a2f] mb-2 uppercase tracking-wider text-sm">Typische Schülerantwort</h4>
-                       <p className="font-handwriting text-2xl text-slate-600 leading-relaxed italic">
-                          "Handys sind voll doof verboten, weil dann kann ich nicht zocken und das nervt voll."
-                       </p>
-                    </div>
-                 </div>
-
-                 <div className="bg-[#1e3a2f] p-10 rounded-[2rem] text-[#f4f1ea] flex flex-col justify-center">
-                     <h3 className="text-2xl font-bold text-[#a4c3a2] mb-6 border-b border-[#3a6350] pb-4">Diagnose: Die doppelte Hürde</h3>
-                     <div className="space-y-6">
-                        <div>
-                           <span className="font-bold text-white block mb-1">BICS (Alltagssprache)</span>
-                           <p className="text-sm text-[#cbd5c0]">Fließend vorhanden ("voll doof", "nervt").</p>
-                        </div>
-                        <div>
-                           <span className="font-bold text-[#ff6b6b] block mb-1">CALP (Bildungssprache)</span>
-                           <p className="text-sm text-[#cbd5c0]">Fehlt komplett: Keine Kausalität ("dadurch dass"), keine Fachbegriffe ("Einschränkung"), keine Distanz.</p>
-                        </div>
-                        <div className="bg-[#2a4f40] p-4 rounded-lg mt-4 text-center italic text-[#a4c3a2]">
-                           "Hier setzt sprachsensibler Unterricht an."
-                        </div>
-                     </div>
-                 </div>
-              </div>
-              <DidacticLayer visible={showDidactic}>
-                 <p>Die Unterscheidung nach Cummins (BICS vs. CALP) ist essenziell. Viele Schüler wirken mündlich fit (BICS), scheitern aber an der schriftlichen Argumentation (CALP). Wir müssen die "unsichtbare Mauer" der Bildungssprache sichtbar machen.</p>
-              </DidacticLayer>
-            </div>
-          );
-
-          const renderSimPhase1 = () => (
-            <div className="w-full h-full flex bg-[#e8f1e9] p-0 overflow-hidden relative">
-               <AnimatePresence>
-                 {isZoomed && (
-                   <motion.div 
-                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                     onClick={() => setIsZoomed(null)}
-                     className="absolute inset-0 z-50 bg-black/95 flex items-center justify-center cursor-zoom-out p-4 md:p-12"
-                   >
-                      <img src={isZoomed} className="max-w-full max-h-full object-contain" alt="Fullscreen" />
-                   </motion.div>
-                 )}
-               </AnimatePresence>
-
-               <div className="w-full h-full flex">
-                  <div className="w-1/2 p-8 lg:p-12 flex items-center justify-center bg-[#f4f1ea]">
-                     <div 
-                        onClick={() => setIsZoomed(IMAGE_ASSETS.caricature)}
-                        className="relative group cursor-zoom-in max-w-xl w-full shadow-2xl rotate-1 hover:rotate-0 transition-transform duration-500"
-                     >
-                        <div className="bg-white p-4 border border-[#d6e6d0]">
-                           <div className="aspect-[4/3] bg-gray-100 overflow-hidden relative">
-                               <img src={IMAGE_ASSETS.caricature} className="w-full h-full object-cover" alt="Karikatur" />
-                               <div className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Maximize2 size={20} />
-                               </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="w-1/2 bg-[#1e3a2f] text-[#f4f1ea] p-12 flex flex-col justify-center">
-                     <h2 className="text-5xl font-serif font-bold mb-8">Handyverbot?!</h2>
-                     
-                     <div className="space-y-8 text-2xl font-light">
-                        <p>Schaut euch die Karikatur an.</p>
-                        <div className="bg-[#2a4f40] p-6 rounded-xl border-l-4 border-[#609966]">
-                           <p className="font-bold text-[#a4c3a2] mb-2">Eure Meinung:</p>
-                           <p>"Beschreibt kurz die Situation. Was geht euch durch den Kopf, wenn ihr das seht?"</p>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-
-               <DidacticLayer visible={showDidactic}>
-                  <div className="grid grid-cols-1 gap-2">
-                     <p><strong className="text-[#a4c3a2]">Impuls:</strong> Visueller Reiz (Karikatur) aktiviert Vorwissen und Emotionen.</p>
-                     <p><strong className="text-[#a4c3a2]">Hürde:</strong> Die Schüleräußerungen verbleiben meist im Bereich der konzeptionellen Mündlichkeit (BICS). Typisch sind unvollständige Sätze, Ellipsen oder affektive Ausrufe ("Voll unfair!").</p>
-                     <p><strong className="text-[#a4c3a2]">Ziel:</strong> Schaffung eines authentischen Sprechanlasses ("Sprachbad"). Die Lehrkraft muss hier moderieren und erste Fachbegriffe (z.B. "Privatsphäre", "Ablenkung") in den Raum werfen (Sprachvorbild).</p>
-                  </div>
-               </DidacticLayer>
-            </div>
-          );
-
-          const renderSimPhase2 = () => (
-            <div className="w-full h-full flex bg-[#f4f1ea] p-0 relative">
-               <div className="w-1/2 bg-[#d6e6d0] p-12 flex flex-col justify-center relative">
-                  <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] bg-[#eaf4ea] rounded-full mix-blend-multiply"></div>
-                  
-                  <div className="relative z-10 grid grid-cols-2 gap-4">
-                     <div className="bg-white p-6 rounded-xl shadow-lg transform -rotate-1 hover:rotate-0 transition-transform col-span-2 flex items-center gap-4 cursor-pointer" onClick={() => setIsZoomed(IMAGE_ASSETS.material1)}>
-                        <div className="bg-[#1e3a2f] w-12 h-12 flex items-center justify-center rounded-lg text-white font-bold shrink-0">M1</div>
-                        <div>
-                           <h4 className="font-bold text-[#1e3a2f]">Zeitungsartikel</h4>
-                           <p className="text-xs text-[#4a6b58]">"Pro & Contra: Handy an Schulen"</p>
-                           <div className="flex gap-1 mt-2"><div className="h-1 w-12 bg-gray-200 rounded"></div><div className="h-1 w-8 bg-gray-200 rounded"></div></div>
-                        </div>
-                     </div>
-
-                     <div className="bg-white p-6 rounded-xl shadow-lg transform rotate-1 hover:rotate-0 transition-transform flex items-center gap-4 cursor-pointer" onClick={() => setIsZoomed(IMAGE_ASSETS.material2)}>
-                        <div className="bg-[#1e3a2f] w-12 h-12 flex items-center justify-center rounded-lg text-white font-bold shrink-0">M2</div>
-                        <div>
-                           <h4 className="font-bold text-[#1e3a2f]">Interview</h4>
-                           <p className="text-xs text-[#4a6b58]">Dr. Müller</p>
-                        </div>
-                     </div>
-
-                     <div className="bg-white p-6 rounded-xl shadow-lg transform -rotate-1 hover:rotate-0 transition-transform flex items-center gap-4 border-l-4 border-[#609966] cursor-pointer" onClick={() => setIsZoomed(IMAGE_ASSETS.material3)}>
-                        <div className="bg-[#609966] w-12 h-12 flex items-center justify-center rounded-lg text-white font-bold shrink-0">M3</div>
-                        <div>
-                           <h4 className="font-bold text-[#1e3a2f]">Statistik</h4>
-                           <p className="text-xs text-[#4a6b58]">"Nutzung"</p>
-                           <BarChart size={16} className="text-gray-400 mt-1"/>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-
-               <div className="w-1/2 p-12 flex flex-col justify-center bg-[#f4f1ea]">
-                  <h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-8">Erarbeitung</h2>
-                  
-                  <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-[#e0e0e0]">
-                     <h3 className="text-xl font-bold text-[#609966] uppercase tracking-wider mb-4">Arbeitsauftrag</h3>
-                     <ul className="space-y-6 text-xl text-[#1e3a2f]">
-                        <li className="flex items-start gap-3">
-                           <span className="font-bold text-[#609966] mt-1"><FileText size={20}/></span>
-                           <span>Lest M1 und M2. Markiert die zentralen Argumente.</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                           <span className="font-bold text-[#609966] mt-1"><BarChart size={20}/></span>
-                           <span>Wertet die Statistik (M3) aus: Was sind die häufigsten Nutzungsgründe?</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                           <span className="font-bold text-[#609966] mt-1"><PenTool size={20}/></span>
-                           <span>Erstellt eine Pro-Contra-Tabelle.</span>
-                        </li>
-                     </ul>
-                  </div>
-               </div>
-
-               <DidacticLayer visible={showDidactic}>
-                  <div className="space-y-3">
-                     <p><strong className="text-[#a4c3a2]">Herausforderung M3:</strong> Die Statistik ist ein <em>diskontinuierlicher Text</em>. SuS müssen visuelle Daten in Sprache übersetzen (Verbalisierung).</p>
-                     <p><strong className="text-[#a4c3a2]">Dual Coding Theory:</strong> Die Kombination von Bild und Text verstärkt das Lernen, erfordert aber eine hohe Transferleistung.</p>
-                     <p><strong className="text-[#a4c3a2]">Scaffolding:</strong> Für M3 bieten wir ein "Wortgeländer" an, das die Struktur der Bildbeschreibung vorgibt. Dies entlastet das Arbeitsgedächtnis.</p>
-                  </div>
-               </DidacticLayer>
-            </div>
-          );
-
-          const renderSimPhase3 = () => (
-            <div className="w-full h-full bg-[#1e3a2f] p-8 lg:p-12 flex flex-col text-[#f4f1ea] relative">
-               <div className="flex justify-between items-start mb-8 z-10">
-                  <div>
-                    <h2 className="text-4xl font-serif font-bold mb-2">Die Schreibphase</h2>
-                    <p className="text-[#a4c3a2]">Schreibt eure Meinung auf.</p>
-                  </div>
-                  
-                  <button 
-                     onClick={() => setScaffoldingActive(!scaffoldingActive)}
-                     className={`px-6 py-3 rounded-full font-bold text-sm transition-all shadow-lg flex items-center gap-2 ${scaffoldingActive ? 'bg-[#f4f1ea] text-[#1e3a2f]' : 'bg-[#2a4f40] text-white border border-[#609966]'}`}
-                  >
-                     <Hammer size={16} />
-                     {scaffoldingActive ? 'Hilfen ausblenden' : 'Hilfe gefällig?'}
-                  </button>
-               </div>
-
-               <div className="flex-1 flex gap-12 z-10">
-                  <div className="w-1/3">
-                     <div className="bg-[#2a4f40] p-8 rounded-[2rem] border border-[#3a6350]">
-                        <h3 className="font-bold text-[#a4c3a2] mb-4 uppercase tracking-widest text-sm">Aufgabe</h3>
-                        <p className="text-xl leading-relaxed mb-6">
-                           "Verfasst einen Kommentar für unsere Schülerzeitung. Bezieht darin klar Position zum Handyverbot."
-                        </p>
-                        <div className="text-sm text-[#cbd5c0] italic border-t border-[#3a6350] pt-4">
-                           <strong className="block mb-1">Anforderung:</strong>
-                           Achtet auf logische Verknüpfungen (Konjunktionen) und eine klare Struktur.
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="w-2/3 grid grid-cols-2 gap-6 content-start">
-                     <div className={`bg-[#f4f1ea] p-6 rounded-xl text-[#1e3a2f] transition-all duration-500 relative cursor-pointer ${scaffoldingActive ? 'opacity-100 translate-y-0' : 'opacity-30 translate-y-4 blur-[2px]'}`} onClick={() => scaffoldingActive && setIsZoomed(IMAGE_ASSETS.scaffoldA)}>
-                        <div className="absolute -top-3 -right-3 bg-[#609966] text-white text-xs font-bold px-2 py-1 rounded">Niveau A</div>
-                        <div className="flex justify-between mb-4 border-b border-[#cbd5c0] pb-2">
-                           <span className="font-bold">Wortgeländer</span>
-                           <Maximize2 size={16} className="text-gray-400"/>
-                        </div>
-                        <div className="font-mono text-sm leading-loose">
-                           Zwar [stören] Handys ...,<br/>
-                           doch [Verbot] verhindert [Lernen] ...,<br/>
-                           deshalb [brauchen] wir [Regeln].
-                        </div>
-                     </div>
-
-                     <div className={`bg-[#f4f1ea] p-6 rounded-xl text-[#1e3a2f] transition-all duration-500 delay-100 relative cursor-pointer ${scaffoldingActive ? 'opacity-100 translate-y-0' : 'opacity-30 translate-y-4 blur-[2px]'}`} onClick={() => scaffoldingActive && setIsZoomed(IMAGE_ASSETS.scaffoldB)}>
-                        <div className="absolute -top-3 -right-3 bg-[#1e3a2f] text-white text-xs font-bold px-2 py-1 rounded">Niveau B</div>
-                        <div className="flex justify-between mb-4 border-b border-[#cbd5c0] pb-2">
-                           <span className="font-bold">Satzanfänge & Konnektoren</span>
-                           <Maximize2 size={16} className="text-gray-400"/>
-                        </div>
-                        <div className="space-y-3 text-sm">
-                           <div className="bg-[#e8f0e6] p-2 rounded border border-[#cbd5c0]">Ein entscheidendes Argument ist...</div>
-                           <div className="bg-[#e8f0e6] p-2 rounded border border-[#cbd5c0]">Daraus folgt zwangsläufig, dass...</div>
-                           <div className="bg-[#e8f0e6] p-2 rounded border border-[#cbd5c0]">Einerseits..., andererseits...</div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-
-               <DidacticLayer visible={showDidactic}>
-                  <div className="space-y-3">
-                     <p><strong className="text-[#a4c3a2]">Offensives Vorgehen:</strong> Wir vereinfachen nicht die Aufgabe ("Schreibe einen einfachen Satz"), sondern wir lassen die komplexe Aufgabe bestehen ("Schreibe einen Kommentar").</p>
-                     <p><strong className="text-[#a4c3a2]">Differenzierung:</strong></p>
-                     <ul className="list-disc list-inside text-sm pl-2 space-y-1">
-                        <li><span className="text-white">Tool A (Wortgeländer):</span> Gibt die syntaktische Struktur vor. Entlastung der Planungsphase.</li>
-                        <li><span className="text-white">Heterogenisierung nach oben:</span> Starke Schüler nutzen keine Hilfen.</li>
-                     </ul>
-                  </div>
-               </DidacticLayer>
-            </div>
-          );
-
-          const renderSimPhase4 = () => (
-            <div className="w-full h-full flex bg-[#f4f1ea] p-12 items-center gap-12 relative">
-               <div className="w-1/2">
-                  <h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-8">Text-Check</h2>
-                  
-                  <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-[#e0e0e0] mb-8">
-                     <h3 className="font-bold text-[#609966] uppercase tracking-wider mb-4">Partnerarbeit</h3>
-                     <p className="text-xl text-[#1e3a2f] leading-relaxed">
-                        "Tauscht euren Text mit dem Nachbarn. Prüft den Text mit der Checkliste rechts."
-                     </p>
-                  </div>
-                  
-                  <div className="text-[#4a6b58] italic text-sm p-4 border-l-2 border-[#609966]">
-                     "Gebt euch Tipps: Was war gut? Wo fehlt noch ein Verbindungswort?"
-                  </div>
-               </div>
-
-               <div className="w-1/2 bg-white p-8 rounded-[2rem] shadow-xl border-t-8 border-[#1e3a2f]">
-                  <h3 className="font-bold text-[#1e3a2f] mb-6 flex items-center gap-3 text-2xl">
-                     <CheckSquare className="text-[#609966]" size={28}/> Eure Checkliste
-                  </h3>
-                  <div className="space-y-4">
-                     {[
-                        'Ist die These (Meinung) klar?',
-                        'Wurden Verbindungswörter (weil, deshalb) benutzt?',
-                        'Wurden Fachbegriffe verwendet?',
-                        'Passt der Text in eine Schülerzeitung?'
-                     ].map((item, i) => (
-                        <div key={i} className="flex items-start gap-4 p-4 bg-[#f9fcf9] rounded-xl border border-[#f0f0f0] hover:shadow-md transition-shadow">
-                           <div className="w-6 h-6 rounded border-2 border-[#1e3a2f] opacity-30 mt-1 hover:bg-[#609966] cursor-pointer"></div>
-                           <span className="text-[#1e3a2f] text-lg font-medium">{item}</span>
-                        </div>
-                     ))}
-                  </div>
-               </div>
-
-               <DidacticLayer visible={showDidactic}>
-                  <div className="space-y-3">
-                     <p><strong className="text-[#a4c3a2]">Metakognition:</strong> Schüler lernen am besten, wenn sie über ihren Lernprozess nachdenken.</p>
-                     <p><strong className="text-[#a4c3a2]">Language Awareness:</strong> Durch die Korrektur fremder Texte entwickeln Schüler ein Gespür für sprachliche Richtigkeit.</p>
-                  </div>
-               </DidacticLayer>
-            </div>
-          );
-
-          const renderCurriculum = () => (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-[#f4f1ea] text-[#1e3a2f] relative overflow-hidden">
-               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[20vw] font-black text-[#d6e6d0] opacity-30 pointer-events-none whitespace-nowrap">
-                  FAZIT
-               </div>
-
-               <div className="relative z-10 max-w-6xl w-full px-8 flex flex-col h-[85vh] justify-center">
-                  <h2 className="text-4xl lg:text-5xl font-serif font-bold mb-10 text-center text-[#1e3a2f]">Fazit & Perspektive</h2>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full max-h-[60vh]">
-                     <div className="flex flex-col gap-6">
-                        <div className="flex-1 bg-white p-8 rounded-[2rem] shadow-lg border-l-8 border-[#1e3a2f] overflow-y-auto">
-                           <h3 className="text-xl font-bold text-[#1e3a2f] mb-3 flex items-center gap-2">
-                              <BookOpen size={20} className="text-[#609966]" /> Curriculare Verankerung
-                           </h3>
-                           <div className="space-y-4">
-                              <div>
-                                <strong className="text-[#4a6b58] text-sm uppercase tracking-wide">Sekundarstufe I</strong>
-                                <p className="text-[#1e3a2f] leading-relaxed text-sm mt-1">
-                                   Der KLP fordert explizit das "adressatengerechte Argumentieren". Ohne sprachliche Hilfen (Scaffolds) ist diese Anforderung für viele Schüler unerreichbar.
-                                </p>
-                              </div>
-                              <div className="pt-4 border-t border-gray-100">
-                                <strong className="text-[#4a6b58] text-sm uppercase tracking-wide">Sekundarstufe II</strong>
-                                <p className="text-[#1e3a2f] leading-relaxed text-sm mt-1">
-                                   Vorbereitung auf das "Materialgestützte Schreiben". Die Synthese von Text und Grafik (Darstellungswechsel) ist eine Kernkompetenz im Abitur.
-                                </p>
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-
-                     <div className="flex flex-col gap-6">
-                         <div className="flex-1 bg-[#1e3a2f] p-8 rounded-[2rem] text-white shadow-xl overflow-y-auto relative">
-                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2 border-b border-[#3a6350] pb-4">
-                               <Layers size={20} className="text-[#a4c3a2]" /> Tiefergehende Bedeutung
-                            </h3>
-                            
-                            <div className="space-y-6">
-                               <div className="bg-[#2a4f40] p-4 rounded-xl border border-[#3a6350]">
-                                  <h4 className="font-bold text-[#a4c3a2] mb-1 text-sm uppercase">Schlüssel zur Teilhabe</h4>
-                                  <p className="text-[#f4f1ea] text-sm leading-relaxed">
-                                     Sprachsensibilität ist kein "Add-on", sondern demokratische Pflicht. Wer die Bildungssprache nicht beherrscht, bleibt vom gesellschaftlichen Diskurs ausgeschlossen.
-                                  </p>
-                               </div>
-
-                               <div className="bg-[#2a4f40] p-4 rounded-xl border border-[#3a6350]">
-                                  <h4 className="font-bold text-[#a4c3a2] mb-1 text-sm uppercase">Haltung statt Methode</h4>
-                                  <p className="text-[#f4f1ea] text-sm leading-relaxed">
-                                     Es erfordert einen Paradigmenwechsel: Weg vom Defizitblick ("Er kann kein Deutsch") hin zur Verantwortung der Lehrkraft, Inhalte sprachlich zugänglich zu machen.
-                                  </p>
-                               </div>
+          // P3 Example (Vorgangsbeschreibung) - REVERTED TO THIS CONTENT
+          const renderDetailP3Ex = () => (
+             <div className="flex h-full p-12 gap-8">
+                {/* Left: Text/Analysis */}
+                <div className="w-1/2 flex flex-col gap-6 overflow-y-auto pr-2">
+                   <h2 className="text-3xl font-serif font-bold text-[#1e3a2f]">Unterrichtsbeispiel: <br/>„Wir schreiben eine Vorgangsbeschreibung“</h2>
+                   
+                   <div className="bg-white p-6 rounded-xl shadow border-l-4 border-[#609966]">
+                      <h4 className="font-bold text-[#1e3a2f] mb-3 text-lg">Kalkulierte kognitive Herausforderung</h4>
+                      <div className="space-y-4">
+                         <div>
+                            <span className="font-bold text-sm text-[#4a6b58] block">a) Reduktion der fachlichen Komplexität</span>
+                            <div className="flex items-start gap-2 mt-1">
+                               <ArrowRight size={16} className="mt-1 text-[#609966] shrink-0"/>
+                               <p className="text-sm">Kognitive Ressourcen freisetzen, statt durch Überforderung zu blockieren.</p>
                             </div>
                          </div>
-                     </div>
-                  </div>
-               </div>
+                         <div>
+                            <span className="font-bold text-sm text-[#4a6b58] block">b) Ordnung als Denkaufgabe</span>
+                            <div className="flex items-start gap-2 mt-1">
+                               <ArrowRight size={16} className="mt-1 text-[#609966] shrink-0"/>
+                               <p className="text-sm">Die Herausforderung liegt auf der Makroebene des Denkens.</p>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+
+                   <div className="bg-white p-6 rounded-xl shadow border-l-4 border-[#1e3a2f]">
+                      <h4 className="font-bold text-[#1e3a2f] mb-3 text-lg">Kalkulierte sprachliche Herausforderung</h4>
+                      <div className="space-y-4">
+                         <div>
+                            <span className="font-bold text-sm text-[#4a6b58] block">a) Bildungssprache benötigt – aber gestützt</span>
+                            <div className="flex items-start gap-2 mt-1">
+                               <ArrowRight size={16} className="mt-1 text-[#1e3a2f] shrink-0"/>
+                               <p className="text-sm">Nicht vorausgesetzt, sondern angebaut.</p>
+                            </div>
+                         </div>
+                         <div>
+                            <span className="font-bold text-sm text-[#4a6b58] block">b) Wichtig im Sinne der Herausforderung:</span>
+                            <div className="flex items-start gap-2 mt-1">
+                               <ArrowRight size={16} className="mt-1 text-[#1e3a2f] shrink-0"/>
+                               <p className="text-sm">Sprache wird produziert, nicht konsumiert.</p>
+                            </div>
+                            <div className="flex items-start gap-2 mt-1">
+                               <ArrowRight size={16} className="mt-1 text-[#1e3a2f] shrink-0"/>
+                               <p className="text-sm">Aufgabe liegt in der Zone der nächsten Entwicklung (Vygotsky, 1978).</p>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Right: Image */}
+                <div className="w-1/2 h-full flex items-center justify-center cursor-zoom-in bg-white rounded-xl shadow-lg border border-[#e0e0e0] p-2" onClick={() => setIsZoomed(IMAGE_ASSETS.p3_vorgang)}>
+                   <img src={IMAGE_ASSETS.p3_vorgang} className="max-h-full object-contain" alt="Vorgangsbeschreibung"/>
+                </div>
+             </div>
+          );
+
+          // === PRINCIPLE 4 ===
+          const renderDetailP4 = () => (
+             <div className="flex flex-col h-full p-12 items-center justify-center text-center">
+                <h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-8">4. Prinzip der Heterogenisierung nach oben</h2>
+                <div className="bg-white p-8 rounded-3xl shadow-xl border border-[#cbd5c0] max-w-4xl">
+                   <p className="text-2xl text-[#1e3a2f] mb-8">"Nicht das Niveau durch Absenkung homogenisieren, sondern durch anspruchsvolle Aufgaben heterogenisieren."</p>
+                   
+                   <div className="bg-red-50 p-6 rounded-xl border border-red-200 mb-6 text-left">
+                      <h4 className="font-bold text-red-800 mb-2 flex items-center gap-2"><AlertTriangle/> Warum keine Homogenisierung nach unten?</h4>
+                      <ul className="list-disc list-inside text-red-700 space-y-1">
+                         <li>Weder lernförderlich noch gerecht</li>
+                         <li>Niedriger Lernstand wird "konserviert"</li>
+                         <li>Keine Forderung aller</li>
+                      </ul>
+                   </div>
+                </div>
+             </div>
+          );
+
+          const renderDetailP4Diff = () => (
+             <div className="flex flex-col h-full p-12">
+                <h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-6">Selbstdifferenzierende Aufgaben</h2>
+                <div className="bg-[#f4f1ea] p-4 rounded-xl border-l-4 border-[#609966] mb-8">
+                   <p className="text-[#4a6b58]">Alternative zur aufwendigen Binnendifferenzierung: Aufgaben, die verschiedene Lösungswege auf hohem Niveau zulassen.</p>
+                </div>
+                <div className="flex-1 flex items-center justify-center cursor-zoom-in" onClick={() => setIsZoomed(IMAGE_ASSETS.p4_schaubild)}>
+                   <img src={IMAGE_ASSETS.p4_schaubild} className="max-h-[75vh] object-contain rounded-xl shadow-lg" style={{imageRendering: 'auto'}} alt="Schaubild Selbstdifferenzierung"/>
+                </div>
+             </div>
+          );
+
+          // === STRATEGIES ===
+          const renderStratDefOff = () => (
+             <div className="flex flex-col h-full p-8 justify-center gap-4">
+                <h2 className="text-4xl font-serif font-bold text-[#1e3a2f] text-center mb-4">Der Umgang mit Hürden</h2>
+                <div className="grid grid-cols-2 gap-8 h-full">
+                   
+                   {/* Defensive Strategy */}
+                   <div className="bg-red-50 p-6 rounded-2xl border-t-8 border-red-400 shadow-lg flex flex-col h-full">
+                      <h3 className="text-3xl font-bold text-red-900 mb-4">Der Defensive Weg</h3>
+                      <div className="mb-4 space-y-2">
+                          <p className="text-red-900 font-bold text-lg">Versuch, sprachlich zu vereinfachen (ohne fachliche Verluste).</p>
+                          <p className="text-red-800 text-base"><strong>Problem:</strong> Hoher Aufwand, Gefahr der Trivialisierung.</p>
+                      </div>
+                      <div className="flex-1 flex flex-col justify-end w-full">
+                          <div className="cursor-zoom-in w-full flex-1 flex items-end justify-center" onClick={() => setIsZoomed(IMAGE_ASSETS.strat_defensive_comic)}>
+                              <img src={IMAGE_ASSETS.strat_defensive_comic} className="max-h-[40vh] object-contain rounded border border-red-200" alt="Comic Defensiv" />
+                          </div>
+                          <p className="text-[10px] text-red-800/60 mt-2 text-center italic">Beese et al. (2014): Sprachbildung in allen Fächern 16. Stuttgart: Ernst Klett Sprachen Verlag. S. 33.</p>
+                      </div>
+                   </div>
+
+                   {/* Offensive Strategy */}
+                   <div className="bg-[#e8f0e6] p-6 rounded-2xl border-t-8 border-[#609966] shadow-lg flex flex-col h-full">
+                      <h3 className="text-3xl font-bold text-[#1e3a2f] mb-4">Der Offensive Weg</h3>
+                       <div className="mb-4 space-y-2">
+                          <p className="text-[#1e3a2f] font-bold text-lg">Sprachhilfen (Scaffolds) bereitstellen.</p>
+                          <p className="text-[#4a6b58] text-base">Methoden-Werkzeuge zum Erlernen fachsprachlicher Strukturen.</p>
+                      </div>
+                      <div className="flex-1 flex flex-col justify-end w-full">
+                          <div className="cursor-zoom-in w-full flex-1 flex items-end justify-center" onClick={() => setIsZoomed(IMAGE_ASSETS.strat_offensive_comic)}>
+                              <img src={IMAGE_ASSETS.strat_offensive_comic} className="max-h-[40vh] object-contain rounded border border-[#609966]/30" alt="Comic Offensiv" />
+                          </div>
+                          <p className="text-[10px] text-[#4a6b58]/60 mt-2 text-center italic">Beese et al. (2014): Sprachbildung in allen Fächern 16. Stuttgart: Ernst Klett Sprachen Verlag. S. 33.</p>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          );
+          
+          const renderStratTask = () => (
+            <div className="flex flex-col h-full p-12 items-center justify-center text-center">
+                <FolderOpen size={80} className="text-[#1e3a2f] mb-8"/>
+                <h2 className="text-5xl font-serif font-bold text-[#1e3a2f] mb-8">Arbeitsauftrag</h2>
+                <div className="bg-white p-12 rounded-[3rem] shadow-xl border border-[#cbd5c0] max-w-4xl">
+                    <p className="text-3xl text-[#4a6b58] leading-relaxed">
+                        Schaut euch im OneDrive-Ordner die Arbeitsblätter <br/>
+                        <strong>"AB_Offensiv_1"</strong> und <strong>"AB_Offensiv_2"</strong> an.
+                    </p>
+                    <hr className="my-8 border-t-2 border-[#cbd5c0] w-1/2 mx-auto"/>
+                    <p className="text-2xl text-[#1e3a2f] font-bold">
+                        Welche Formen der sprachlichen Hilfe könnt ihr erkennen?
+                    </p>
+                </div>
             </div>
           );
 
+          const renderStratCategories = () => (
+             <div className="flex flex-col h-full p-12 overflow-y-auto">
+                <h2 className="text-4xl font-serif font-bold text-[#1e3a2f] mb-12 text-center">Methoden-Werkzeuge (Kategorien)</h2>
+                <div className="grid grid-cols-3 gap-8">
+                   <div className="bg-white p-8 rounded-2xl shadow-lg border-t-8 border-[#a4c3a2] flex flex-col h-full">
+                      <div className="flex items-center gap-3 mb-6">
+                          <span className="bg-[#a4c3a2] text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">1</span>
+                          <h4 className="text-2xl font-bold text-[#1e3a2f]">Spezifisch</h4>
+                      </div>
+                      <ul className="list-disc list-inside text-lg space-y-3 text-[#4a6b58]"><li>Wortliste</li><li>Verbliste</li><li>Wortfeld</li><li>Wortgeländer</li><li>Bildfolge</li></ul>
+                   </div>
+                   <div className="bg-white p-8 rounded-2xl shadow-lg border-t-8 border-[#609966] flex flex-col h-full">
+                      <div className="flex items-center gap-3 mb-6">
+                          <span className="bg-[#609966] text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">2</span>
+                          <h4 className="text-2xl font-bold text-[#1e3a2f]">Universell</h4>
+                      </div>
+                      <ul className="list-disc list-inside text-lg space-y-3 text-[#4a6b58]">
+                          <li>Überblendung</li>
+                          <li>Redemittel (Beschreibung)</li>
+                          <li>Schaubilder / Grafiken</li>
+                          <li>Tabellen</li>
+                          <li>Karikaturen</li>
+                          <li>Plakate</li>
+                      </ul>
+                   </div>
+                   <div className="bg-white p-8 rounded-2xl shadow-lg border-t-8 border-[#1e3a2f] flex flex-col h-full">
+                      <div className="flex items-center gap-3 mb-6">
+                          <span className="bg-[#1e3a2f] text-white w-8 h-8 flex items-center justify-center rounded-full font-bold">3</span>
+                          <h4 className="text-2xl font-bold text-[#1e3a2f]">Schüleraktiv</h4>
+                      </div>
+                      <ul className="list-disc list-inside text-lg space-y-3 text-[#4a6b58]"><li>Begriffsmatrix</li><li>Übersetzungstabelle</li><li>Denk- und Sprechblasen</li></ul>
+                   </div>
+                </div>
+             </div>
+          );
+
+          const renderStratStark = () => (
+             <div className="flex flex-col h-full p-12">
+                <h2 className="text-3xl font-serif font-bold text-[#1e3a2f] mb-6">Der Stärkende Weg</h2>
+                <div className="bg-blue-50 p-6 rounded-xl border-l-4 border-blue-400 mb-8">
+                   <p className="text-blue-900 text-lg">Wirkt sprachbildend durch Wortschatzerweiterung & Strategien. <br/>Ziel: Langfristiger Ausbau der Sprachkompetenz.</p>
+                </div>
+                
+                <div className="flex gap-12 h-full items-center">
+                    {/* Visual 5-Step Method */}
+                    <div className="w-1/3 flex flex-col justify-center h-full">
+                        <div className="bg-white p-8 rounded-2xl shadow-xl border border-blue-100 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-bl-xl">Beispiel</div>
+                            <h3 className="text-2xl font-bold text-[#1e3a2f] mb-6 border-b pb-2">Die 5-Schritt-Lesemethode</h3>
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold">1</div><span className="font-bold text-lg text-gray-700">Überblick verschaffen</span></div>
+                                <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center font-bold">2</div><span className="font-bold text-lg text-gray-700">Fragen stellen</span></div>
+                                <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-blue-300 text-blue-900 flex items-center justify-center font-bold">3</div><span className="font-bold text-lg text-gray-700">Gründlich lesen</span></div>
+                                <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-blue-400 text-white flex items-center justify-center font-bold">4</div><span className="font-bold text-lg text-gray-700">Zusammenfassen</span></div>
+                                <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">5</div><span className="font-bold text-lg text-gray-700">Wiederholen</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Preserved Image */}
+                    <div className="w-2/3 h-full flex justify-center items-center cursor-zoom-in" onClick={() => setIsZoomed(IMAGE_ASSETS.strat_lese)}>
+                       <img src={IMAGE_ASSETS.strat_lese} className="max-h-[60vh] object-contain rounded-xl shadow-lg border border-gray-200" alt="Lesestrategien"/>
+                    </div>
+                </div>
+             </div>
+          );
+
+          // FAZIT (Preserved)
+          const renderCurriculum = () => (<div className="flex flex-col items-center justify-center h-full bg-[#f4f1ea] text-[#1e3a2f] relative overflow-hidden"><div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[20vw] font-black text-[#d6e6d0] opacity-30 pointer-events-none whitespace-nowrap">FAZIT</div><div className="relative z-10 max-w-6xl w-full px-8 flex flex-col h-[85vh] justify-center"><h2 className="text-4xl lg:text-5xl font-serif font-bold mb-10 text-center text-[#1e3a2f]">Fazit & Perspektive</h2><div className="grid grid-cols-2 gap-8"><div className="bg-white p-8 rounded-[2rem] shadow-lg border-l-8 border-[#1e3a2f]"><h3 className="text-xl font-bold text-[#1e3a2f] mb-3"><BookOpen className="inline mr-2"/> Curriculare Verankerung</h3><p className="text-sm">Sek I: Argumentieren | Sek II: Materialgestütztes Schreiben</p></div><div className="bg-[#1e3a2f] p-8 rounded-[2rem] text-white shadow-xl"><h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2 border-b border-[#3a6350] pb-4"><Layers size={20}/> Tiefergehende Bedeutung</h3><div className="space-y-4"><div className="bg-[#2a4f40] p-4 rounded-xl border border-[#3a6350]"><h4 className="font-bold text-[#a4c3a2] mb-1 text-sm">Schlüssel zur Teilhabe</h4><p className="text-sm">Demokratische Pflicht.</p></div><div className="bg-[#2a4f40] p-4 rounded-xl border border-[#3a6350]"><h4 className="font-bold text-[#a4c3a2] mb-1 text-sm">Haltung statt Methode</h4><p className="text-sm">Vom Defizitblick zum Ressourcenblick.</p></div></div></div></div></div></div>);
+
+          // --- MAIN RENDER SWITCH ---
           const renderContent = () => {
-            switch (slides[currentPhaseIndex].id) {
-              case 'intro': return renderIntro();
-              case 'theory': return renderTheory();
-              case 'diagnosis': return renderDiagnosis();
-              case 'sim_p1': return renderSimPhase1();
-              case 'sim_p2': return renderSimPhase2();
-              case 'sim_p3': return renderSimPhase3();
-              case 'sim_p4': return renderSimPhase4();
-              case 'curriculum': return renderCurriculum();
-              default: return renderIntro();
+            const id = slides[currentPhaseIndex].id;
+            switch(id) {
+                case 'intro': return renderIntro();
+                case 'theory_1': return renderTheory1();
+                case 'theory_2': return renderTheory2();
+                case 'theory_3': return renderTheory3();
+                case 'theory_4': return renderTheory4();
+                case 'theory_5': return renderTheory5();
+                case 'theory_6': return renderTheory6();
+                case 'theory_7': return renderTheory7();
+                case 'theory_8': return renderTheory8();
+                case 'diagnosis': return renderDiagnosis();
+                case 'sim_p1': return renderSimP1();
+                case 'workshop': return renderWorkshop();
+                case 'sim_p2': return renderSimP2();
+                case 'sim_p3': return renderSimP3();
+                case 'sim_p4': return renderSimP4();
+                // DETAILS
+                case 'detail_p1': return renderDetailP1();
+                case 'detail_p1_app': return renderDetailP1App();
+                case 'detail_p1_ex': return renderDetailP1Ex();
+                case 'detail_p2': return renderDetailP2();
+                case 'detail_p2_task': return renderDetailP2Task(); // UPDATED
+                case 'detail_p2_sol': return renderDetailP2Sol();
+                case 'detail_p3': return renderDetailP3();
+                case 'detail_p3_ex': return renderDetailP3Ex(); 
+                case 'detail_p4': return renderDetailP4();
+                case 'detail_p4_diff': return renderDetailP4Diff();
+                case 'strat_def_off': return renderStratDefOff();
+                case 'strat_task': return renderStratTask(); 
+                case 'strat_categories': return renderStratCategories(); 
+                case 'strat_stark': return renderStratStark(); // UPDATED
+                
+                case 'curriculum': return renderCurriculum();
+                default: return <div>Slide not found</div>;
             }
           };
 
           return (
-            <div className="w-full h-screen bg-[#f4f1ea] flex flex-col font-sans overflow-hidden text-[#1e3a2f]">
-              <div className="h-20 flex items-center justify-between px-8 z-50 pointer-events-none">
-                 <div className="pointer-events-auto flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#1e3a2f] rounded-full flex items-center justify-center text-[#f4f1ea] shadow-lg">
-                       {currentSlide.icon}
+            <div className="w-full h-screen flex flex-col font-sans overflow-hidden text-[#1e3a2f] relative">
+              {/* Navigation Bar */}
+              <div className="h-16 flex items-center justify-between px-8 z-50 bg-[#f4f1ea]/90 backdrop-blur border-b border-[#e0e0e0]">
+                 <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-[#1e3a2f] rounded-full flex items-center justify-center text-white shadow-lg text-xs font-bold">
+                       {currentPhaseIndex + 1}
                     </div>
-                    <div className="hidden md:block">
-                       <span className="block font-serif font-bold text-lg leading-none">{currentSlide.title}</span>
-                       <span className="text-xs text-[#609966] font-bold uppercase tracking-wider">{currentSlide.subtitle}</span>
+                    <div>
+                       <span className="block font-serif font-bold text-base leading-none">{slides[currentPhaseIndex].title}</span>
+                       <span className="text-xs text-[#609966] font-bold uppercase tracking-wider">{slides[currentPhaseIndex].subtitle}</span>
                     </div>
                  </div>
-                 
-                 <div className="pointer-events-auto flex items-center gap-4">
+                 <div className="flex gap-4 items-center">
                     {['diagnosis', 'sim_p1', 'sim_p2', 'sim_p3', 'sim_p4'].includes(slides[currentPhaseIndex].id) && (
-                       <button 
-                         onClick={() => setShowDidactic(!showDidactic)}
-                         className="text-4xl hover:scale-110 transition-transform active:scale-95 filter drop-shadow-md focus:outline-none"
-                         title="Didaktischer Kommentar"
-                       >
-                         🤓
-                       </button>
+                       <button onClick={() => setShowDidactic(!showDidactic)} className={`text-3xl transition-transform active:scale-95 filter drop-shadow-md focus:outline-none hover:scale-110 ${showDidactic ? 'grayscale-0' : 'grayscale opacity-70'}`} title="Didaktischer Kommentar">🤓</button>
                     )}
-
                     <div className="flex gap-2">
-                       <button onClick={prevSlide} disabled={currentPhaseIndex === 0} className="w-12 h-12 rounded-full border border-[#1e3a2f] flex items-center justify-center hover:bg-[#1e3a2f] hover:text-[#f4f1ea] disabled:opacity-30 transition-all"><ChevronLeft size={20} /></button>
-                       <button onClick={nextSlide} disabled={currentPhaseIndex === slides.length - 1} className="h-12 px-6 rounded-full bg-[#1e3a2f] text-[#f4f1ea] font-bold flex items-center gap-2 hover:bg-[#2a4f40] disabled:opacity-50 transition-all shadow-lg">{currentPhaseIndex === slides.length - 1 ? 'Ende' : 'Weiter'} <ChevronRight size={16} /></button>
+                       <button onClick={prevSlide} disabled={currentPhaseIndex === 0} className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-30"><ChevronLeft size={20} /></button>
+                       <button onClick={nextSlide} disabled={currentPhaseIndex === slides.length - 1} className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-30"><ChevronRight size={20} /></button>
                     </div>
                  </div>
               </div>
 
-              <div className="flex-1 relative overflow-hidden">
+              {/* Main Content Area */}
+              <div className="flex-1 relative overflow-hidden bg-[#f4f1ea]">
                  <AnimatePresence mode='wait'>
-                    <motion.div key={currentPhaseIndex} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="w-full h-full">
+                    <motion.div key={currentPhaseIndex} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="w-full h-full">
                        {renderContent()}
                     </motion.div>
                  </AnimatePresence>
               </div>
+
+              {/* Zoom Overlay */}
+              <AnimatePresence>
+                 {isZoomed && (
+                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsZoomed(null)} className="absolute inset-0 z-[100] bg-black/95 flex items-center justify-center cursor-zoom-out p-12">
+                      <img src={isZoomed} className="max-w-full max-h-full object-contain" alt="Zoom" />
+                   </motion.div>
+                 )}
+               </AnimatePresence>
               
-              <div className="h-2 w-full bg-[#e0e0e0]">
-                 <motion.div className="h-full bg-[#1e3a2f]" initial={{ width: '0%' }} animate={{ width: `${((currentPhaseIndex + 1) / slides.length) * 100}%` }} transition={{ duration: 0.5 }} />
+              {/* Progress Bar */}
+              <div className="h-1 w-full bg-[#e0e0e0]">
+                 <motion.div className="h-full bg-[#1e3a2f]" initial={{ width: '0%' }} animate={{ width: `${((currentPhaseIndex + 1) / slides.length) * 100}%` }} transition={{ duration: 0.3 }} />
               </div>
             </div>
           );
