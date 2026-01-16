@@ -493,13 +493,15 @@
                 <div className="grid grid-cols-2 gap-8 h-full">
                    
                    {/* Defensive Strategy */}
-                   <div className="bg-red-50 p-6 rounded-2xl border-t-8 border-red-400 shadow-lg flex flex-col h-full">
-                      <h3 className="text-3xl font-bold text-red-900 mb-4">Der Defensive Weg</h3>
-                      <div className="mb-4 space-y-2">
-                          <p className="text-red-900 font-bold text-lg">Versuch, sprachlich zu vereinfachen (ohne fachliche Verluste).</p>
-                          <p className="text-red-800 text-base"><strong>Problem:</strong> Hoher Aufwand, Gefahr der Trivialisierung.</p>
+                   <div className="bg-red-50 p-6 rounded-2xl border-t-8 border-red-400 shadow-lg flex h-full gap-6">
+                      <div className="w-1/2 flex flex-col">
+                          <h3 className="text-3xl font-bold text-red-900 mb-4">Der Defensive Weg</h3>
+                          <div className="space-y-2">
+                              <p className="text-red-900 font-bold text-lg">Versuch, sprachlich zu vereinfachen (ohne fachliche Verluste).</p>
+                              <p className="text-red-800 text-base"><strong>Problem:</strong> Hoher Aufwand, Gefahr der Trivialisierung.</p>
+                          </div>
                       </div>
-                      <div className="flex-1 flex flex-col justify-end w-full">
+                      <div className="w-1/2 flex flex-col justify-end">
                           <div className="cursor-zoom-in w-full flex-1 flex items-end justify-center" onClick={() => setIsZoomed(IMAGE_ASSETS.strat_defensive_comic)}>
                               <img src={IMAGE_ASSETS.strat_defensive_comic} className="max-h-[40vh] object-contain rounded border border-red-200" alt="Comic Defensiv" />
                           </div>
@@ -508,13 +510,15 @@
                    </div>
 
                    {/* Offensive Strategy */}
-                   <div className="bg-[#e8f0e6] p-6 rounded-2xl border-t-8 border-[#609966] shadow-lg flex flex-col h-full">
-                      <h3 className="text-3xl font-bold text-[#1e3a2f] mb-4">Der Offensive Weg</h3>
-                       <div className="mb-4 space-y-2">
-                          <p className="text-[#1e3a2f] font-bold text-lg">Sprachhilfen (Scaffolds) bereitstellen.</p>
-                          <p className="text-[#4a6b58] text-base">Methoden-Werkzeuge zum Erlernen fachsprachlicher Strukturen.</p>
+                   <div className="bg-[#e8f0e6] p-6 rounded-2xl border-t-8 border-[#609966] shadow-lg flex h-full gap-6">
+                      <div className="w-1/2 flex flex-col">
+                          <h3 className="text-3xl font-bold text-[#1e3a2f] mb-4">Der Offensive Weg</h3>
+                           <div className="space-y-2">
+                              <p className="text-[#1e3a2f] font-bold text-lg">Sprachhilfen (Scaffolds) bereitstellen.</p>
+                              <p className="text-[#4a6b58] text-base">Methoden-Werkzeuge zum Erlernen fachsprachlicher Strukturen.</p>
+                          </div>
                       </div>
-                      <div className="flex-1 flex flex-col justify-end w-full">
+                      <div className="w-1/2 flex flex-col justify-end">
                           <div className="cursor-zoom-in w-full flex-1 flex items-end justify-center" onClick={() => setIsZoomed(IMAGE_ASSETS.strat_offensive_comic)}>
                               <img src={IMAGE_ASSETS.strat_offensive_comic} className="max-h-[40vh] object-contain rounded border border-[#609966]/30" alt="Comic Offensiv" />
                           </div>
